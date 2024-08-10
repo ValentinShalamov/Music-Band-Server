@@ -279,7 +279,7 @@ public class CollectionManagerTest {
 
         String resultMessage = collectionManager.minByBestAlbum();
 
-        Assertions.assertEquals(500, Collections.min(collectionManager.getMusicBands()).getBestAlbum().getSales());
+        Assertions.assertEquals(500, Collections.min(collectionManager.getMusicBands()).getBestAlbum().sales());
         Assertions.assertEquals(resultMessage, Collections.min(collectionManager.getMusicBands()).toString());
     }
 

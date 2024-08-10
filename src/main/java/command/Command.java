@@ -22,4 +22,13 @@ public class Command {
     public String getSecondArg() {
         return secondArg;
     }
+
+    @Override
+    public String toString() {
+        return "Command{" +
+                "name='" + name + '\'' +
+                ", firstArg='" + firstArg + '\'' +
+                ", secondArg='" + secondArg + '\'' +
+                '}' + '\n';
+    }
 }

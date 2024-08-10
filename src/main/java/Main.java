@@ -1,22 +1,31 @@
-
 import file.FileManager;
+import logger.DefaultFileHandler;
 import manager.CollectionManager;
 import manager.Manager;
 import music.MusicBand;
-import server.Server;
 import server.RequestHandler;
+import server.Server;
 
 import java.io.IOException;
 import java.util.HashSet;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class Main {
-    public static void main(String[] args) throws IOException {
-        HashSet<MusicBand> musicBands = new HashSet<>();
-        CollectionManager collectionManager = new CollectionManager(musicBands);
-        FileManager fileManager = new FileManager(collectionManager);
-        Manager manager = new Manager(collectionManager, fileManager);
-        RequestHandler requestHandler = new RequestHandler(manager);
-        Server server = new Server(requestHandler, "localhost", 8888);
-        server.start();
+    public static void main(String[] args) {
+        Logger logger = Logger.getLogger(Main.class.getName());
+        logger.addHandler(DefaultFileHandler.getFileHandler());
+        logger.setUseParentHandlers(false);
+        try {
+            HashSet<MusicBand> musicBands = new HashSet<>();
+            CollectionManager collectionManager = new CollectionManager(musicBands);
+            FileManager fileManager = new FileManager(collectionManager);
+            Manager manager = new Manager(collectionManager, fileManager);
+            RequestHandler requestHandler = new RequestHandler(manager);
+            Server server = new Server(requestHandler, "localhost", 8888);
+            server.start();
+        } catch (IOException e) {
+            logger.log(Level.SEVERE, e.getMessage(), e);
+        }
     }
 }

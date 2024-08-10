@@ -1,5 +1,7 @@
 package server;
 
+import logger.DefaultFileHandler;
+
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
@@ -10,6 +12,8 @@ import java.nio.channels.SocketChannel;
 import java.nio.charset.StandardCharsets;
 import java.util.Iterator;
 import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import static messages.ServerMessages.*;
 
@@ -20,6 +24,8 @@ public class Server {
     private final byte[] bytes = new byte[buffer.capacity()];
     private final RequestHandler requestHandler;
 
+    private static final Logger logger = Logger.getLogger(Server.class.getName());
+
     public Server(RequestHandler requestHandler, String address, int port) throws IOException {
         this.serverSocketChannel = ServerSocketChannel.open();
         this.serverSocketChannel.socket().bind(new InetSocketAddress(address, port));
@@ -27,11 +33,13 @@ public class Server {
         this.selector = Selector.open();
         this.serverSocketChannel.register(selector, SelectionKey.OP_ACCEPT);
         this.requestHandler = requestHandler;
+        logger.addHandler(DefaultFileHandler.getFileHandler());
+        logger.setUseParentHandlers(false);
     }
 
     public void start() {
         try {
-            showMessage(SERVER_RUNNING);
+            logger.info(SERVER_RUNNING);
             Set<SelectionKey> selectedKeys;
             Iterator<SelectionKey> iter;
             SelectionKey key;
@@ -51,8 +59,7 @@ public class Server {
                 }
             }
         } catch (IOException e) {
-            showMessage(e.getMessage());
-            showMessage(UNEXPECTED_ERROR);
+            logger.log(Level.SEVERE, UNEXPECTED_ERROR, e);
         }
     }
 
@@ -60,7 +67,7 @@ public class Server {
         SocketChannel client = ((ServerSocketChannel) key.channel()).accept();
         client.configureBlocking(false);
         client.register(selector, SelectionKey.OP_READ);
-        showMessage(NEW_CLIENT_CONNECTED + client.getRemoteAddress());
+        logger.info(NEW_CLIENT_CONNECTED + client.getRemoteAddress() + "\n");
         buffer.flip();
         client.write(ByteBuffer.wrap(requestHandler.readEnvironment().getBytes(StandardCharsets.UTF_8)));
         buffer.clear();
@@ -74,18 +81,19 @@ public class Server {
         if (r == -1) {
             requestHandler.save();
             client.close();
-            showMessage(CLIENT_HAS_DISCONNECTED);
+            logger.info(CLIENT_HAS_DISCONNECTED);
         } else {
+            logger.info(GETTING_REQUEST_FROM_CLIENT);
             buffer.flip();
             buffer.get(bytes, 0, buffer.remaining());
             request = new String(bytes, 0, r);
+            logger.info(PROCESSING_REQUEST);
             result = requestHandler.getHandlerResult(requestHandler.handleRequest(request));
+            logger.log(Level.WARNING, result);
+            logger.info(PREPARING_TO_SEND);
             client.write(ByteBuffer.wrap(result.getBytes(StandardCharsets.UTF_8)));
+            logger.info(SENDING_ANSWER_TO_CLIENT);
             buffer.clear();
         }
-    }
-
-    private void showMessage(String message) {
-        System.out.println(message);
     }
 }

@@ -118,7 +118,7 @@ public class CollectionManager {
         }
         initGlobId(musicBands);
         musicBand.initId();
-        if (musicBand.getBestAlbum().getSales() < Collections.min(musicBands).getBestAlbum().getSales()) {
+        if (musicBand.getBestAlbum().sales() < Collections.min(musicBands).getBestAlbum().sales()) {
             if (musicBands.add(musicBand)) {
                 return MUSIC_BAND_HAS_BEEN_ADDED_SUCCESSFUL;
             } else {
@@ -138,7 +138,7 @@ public class CollectionManager {
         StringBuilder builder = new StringBuilder();
         HashSet<MusicBand> copyMusicBands = new HashSet<>(musicBands);
         for (MusicBand band : copyMusicBands) {
-            if (band.getBestAlbum().getSales() < sales) {
+            if (band.getBestAlbum().sales() < sales) {
                 id = band.getId();
                 if (musicBands.remove(band)) {
                     builder.append(MUSIC_BAND_HAS_BEEN_DELETED_SUCCESSFUL_ID).append(id).append('\n');
@@ -168,7 +168,7 @@ public class CollectionManager {
         }
         StringBuilder builder = new StringBuilder();
         for (MusicBand musicBand : musicBands) {
-            if (musicBand.getBestAlbum().getSales() == bestAlbum.getSales()) {
+            if (musicBand.getBestAlbum().sales() == bestAlbum.sales()) {
                 builder.append(musicBand);
             }
         }
@@ -187,7 +187,7 @@ public class CollectionManager {
         Collections.sort(sortBands);
         StringBuilder builder = new StringBuilder();
         for (MusicBand musicBand : sortBands) {
-            builder.append("id = ").append(musicBand.getId()).append(", sales = ").append(musicBand.getBestAlbum().getSales()).append('\n');
+            builder.append("id = ").append(musicBand.getId()).append(", sales = ").append(musicBand.getBestAlbum().sales()).append('\n');
         }
         return builder.toString();
     }

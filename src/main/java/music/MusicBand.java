@@ -26,7 +26,7 @@ public class MusicBand implements Comparable<MusicBand> {
 
     @Override
     public int compareTo(MusicBand anotherBand) {
-        return Long.compare(bestAlbum.getSales(), anotherBand.bestAlbum.getSales());
+        return Long.compare(bestAlbum.sales(), anotherBand.bestAlbum.sales());
     }
 
     public Long getId() {
@@ -67,7 +67,7 @@ public class MusicBand implements Comparable<MusicBand> {
                 "number of participants = %d, establishment date is %s, " +
                 "genre is %s, the best album is %s, count sales of the best album = %d \n",
                 id, name, creationDate.toLocalTime().format(DateTimeFormatter.ofPattern("HH:mm")), numberOfParticipants, establishmentDate, genre,
-                bestAlbum.getName(), bestAlbum.getSales());
+                bestAlbum.name(), bestAlbum.sales());
     }
 
     @Override
