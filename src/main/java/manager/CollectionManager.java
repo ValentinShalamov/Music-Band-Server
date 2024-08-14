@@ -1,6 +1,5 @@
 package manager;
 
-import music.BestAlbum;
 import music.MusicBand;
 
 import java.time.LocalDateTime;
@@ -45,11 +44,11 @@ public class CollectionManager {
         if (musicBands.isEmpty()) {
             return COLLECTION_IS_EMPTY;
         } else {
-            List<MusicBand> sortBands = new ArrayList<>(musicBands);
-            sortBands.sort(Comparator.comparingLong(MusicBand::getId));
-            StringBuilder stringBuilder = new StringBuilder();
-            sortBands.forEach((musicBand) -> stringBuilder.append(musicBand.toString()));
-            return stringBuilder.toString();
+            StringBuilder sb = new StringBuilder();
+            musicBands.stream()
+                    .sorted(Comparator.comparingLong(MusicBand::getId))
+                    .forEach(sb::append);
+            return sb.toString();
         }
     }
 
@@ -66,15 +65,16 @@ public class CollectionManager {
 
     public String updateById(MusicBand musicBand, long id) {
         addHistory(" - update <id> \n");
-        for (MusicBand band : musicBands) {
-            if (band.getId() == id) {
-                musicBand.setId(id);
-                if (musicBands.add(musicBand)) {
-                    musicBands.remove(band);
-                    return MUSIC_BAND_HAS_BEEN_UPDATED_SUCCESSFUL;
-                } else {
-                    return UPDATED_MISTAKE;
-                }
+        Optional<MusicBand> oldMb = musicBands.stream()
+                .filter(mb -> mb.getId() == id)
+                .findAny();
+        if (oldMb.isPresent()) {
+            musicBand.setId(id);
+            if (musicBands.add(musicBand)) {
+                musicBands.remove(oldMb.get());
+                return MUSIC_BAND_HAS_BEEN_UPDATED_SUCCESSFUL;
+            } else {
+                return UPDATED_MISTAKE;
             }
         }
         return NO_SUCH_ID;
@@ -96,18 +96,15 @@ public class CollectionManager {
     }
 
     public String history() {
-        int count = 0;
-        StringBuilder builder = new StringBuilder();
-        for (String s : history) {
-            if (count == 0 && s != null) {
-                builder.append(s).delete(s.length() - 2, s.length()).append(" - last command \n");
-                count++;
-                continue;
-            }
-            if (s != null) {
-                builder.append(s);
-            }
+        if (history.isEmpty()) {
+            return HISTORY_IS_EMPTY;
         }
+        StringBuilder builder = new StringBuilder();
+        String firstCommand = history.getFirst();
+        builder.append(firstCommand).delete(firstCommand.length() - 2, firstCommand.length()).append(" - last command \n");
+        history.stream()
+                .skip(1)
+                .forEach(builder::append);
         return builder.toString();
     }
 
@@ -134,19 +131,11 @@ public class CollectionManager {
         if (musicBands.isEmpty()) {
             return COLLECTION_IS_EMPTY;
         }
-        long id;
         StringBuilder builder = new StringBuilder();
-        HashSet<MusicBand> copyMusicBands = new HashSet<>(musicBands);
-        for (MusicBand band : copyMusicBands) {
-            if (band.getBestAlbum().sales() < sales) {
-                id = band.getId();
-                if (musicBands.remove(band)) {
-                    builder.append(MUSIC_BAND_HAS_BEEN_DELETED_SUCCESSFUL_ID).append(id).append('\n');
-                } else {
-                    builder.append(DELETED_MISTAKE_ID).append(id).append('\n');
-                }
-            }
-        }
+        musicBands.stream()
+                .filter(mb -> mb.getBestAlbum().sales() < sales)
+                .forEach(mb -> builder.append(MUSIC_BAND_HAS_BEEN_DELETED_SUCCESSFUL_ID).append(mb.getId()).append('\n'));
+        musicBands.removeIf(mb -> mb.getBestAlbum().sales() < sales);
         if (builder.toString().isEmpty()) {
             return ALL_ELEMENT_BIGGER;
         }
@@ -161,18 +150,16 @@ public class CollectionManager {
         return Collections.min(musicBands).toString();
     }
 
-    public String filterByBestAlbum(BestAlbum bestAlbum) {
-        addHistory("- filter_by_best_album \n");
+    public String filterByBestAlbum(long sales) {
+        addHistory("- filter_by_sales \n");
         if (musicBands.isEmpty()) {
             return COLLECTION_IS_EMPTY;
         }
         StringBuilder builder = new StringBuilder();
-        for (MusicBand musicBand : musicBands) {
-            if (musicBand.getBestAlbum().sales() == bestAlbum.sales()) {
-                builder.append(musicBand);
-            }
-        }
-        if (builder.toString().isEmpty()) {
+        musicBands.stream()
+                .filter(mb -> mb.getBestAlbum().sales() == sales)
+                .forEach(builder::append);
+        if (builder.isEmpty()) {
             return NO_SUCH_ELEMENTS;
         }
         return builder.toString();
@@ -183,12 +170,10 @@ public class CollectionManager {
         if (musicBands.isEmpty()) {
             return COLLECTION_IS_EMPTY;
         }
-        List<MusicBand> sortBands = new ArrayList<>(musicBands);
-        Collections.sort(sortBands);
         StringBuilder builder = new StringBuilder();
-        for (MusicBand musicBand : sortBands) {
-            builder.append("id = ").append(musicBand.getId()).append(", sales = ").append(musicBand.getBestAlbum().sales()).append('\n');
-        }
+        musicBands.stream()
+                .sorted(MusicBand::compareTo)
+                .forEach(mb -> builder.append("id = ").append(mb.getId()).append(", sales = ").append(mb.getBestAlbum().sales()).append('\n'));
         return builder.toString();
     }
 

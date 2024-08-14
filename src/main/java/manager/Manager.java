@@ -3,11 +3,11 @@ package manager;
 import com.google.gson.JsonSyntaxException;
 import exceptions.EmptyFileException;
 import file.FileManager;
-import music.BestAlbum;
 import music.MusicBand;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
+
 import static messages.ResultMessages.*;
 
 public class Manager {
@@ -63,8 +63,8 @@ public class Manager {
         return collectionManager.minByBestAlbum();
     }
 
-    public String filterByBestAlbum(BestAlbum bestAlbum) {
-        return collectionManager.filterByBestAlbum(bestAlbum);
+    public String filterByBestAlbum(long sales) {
+        return collectionManager.filterByBestAlbum(sales);
     }
 
     public String printFieldAscBestAlbum() {

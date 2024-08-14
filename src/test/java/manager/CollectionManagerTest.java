@@ -288,8 +288,8 @@ public class CollectionManagerTest {
     */
     @Test
     void shouldCollectionIsEmptyInFilterByBestAlbumMethod() {
-        BestAlbum bestAlbum = new BestAlbum("Love natural", 3990);
-        String resultMessage = collectionManager.filterByBestAlbum(bestAlbum);
+        long sales = 3990;
+        String resultMessage = collectionManager.filterByBestAlbum(sales);
         Assertions.assertEquals(COLLECTION_IS_EMPTY, resultMessage);
     }
 
@@ -311,9 +311,9 @@ public class CollectionManagerTest {
         collectionManager.add(fourthBand);
         collectionManager.add(fifthBand);
 
-        BestAlbum bestAlbum = new BestAlbum("Love natural", 1500);
+        long sales = 1500;
 
-        String resultMessage = collectionManager.filterByBestAlbum(bestAlbum);
+        String resultMessage = collectionManager.filterByBestAlbum(sales);
         Assertions.assertTrue(resultMessage.contains("first"));
         Assertions.assertTrue(resultMessage.contains("second"));
         Assertions.assertTrue(resultMessage.contains("third"));
@@ -339,9 +339,9 @@ public class CollectionManagerTest {
         collectionManager.add(fourthBand);
         collectionManager.add(fifthBand);
 
-        BestAlbum bestAlbum = new BestAlbum("Love natural", 1550);
+        long sales = 1550;
 
-        String resultMessage = collectionManager.filterByBestAlbum(bestAlbum);
+        String resultMessage = collectionManager.filterByBestAlbum(sales);
         Assertions.assertEquals(NO_SUCH_ELEMENTS, resultMessage);
     }
 }

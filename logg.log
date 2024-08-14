@@ -1,275 +1,76 @@
-авг. 10, 2024 2:55:51 PM server.Server start
+авг. 14, 2024 4:22:21 PM server.Server start
 INFO: The server is running 
 
-авг. 10, 2024 2:55:53 PM server.Server handleAccept
-INFO: New client connected /127.0.0.1:39736
+авг. 14, 2024 4:22:32 PM server.Server handleAccept
+INFO: New client connected /127.0.0.1:48168
 
-авг. 10, 2024 2:55:53 PM server.RequestHandler readEnvironment
+авг. 14, 2024 4:22:32 PM server.RequestHandler readEnvironment
 INFO: Reading the variable environment 
 
-авг. 10, 2024 2:55:53 PM server.RequestHandler readEnvironment
+авг. 14, 2024 4:22:32 PM server.RequestHandler readEnvironment
 INFO: The music band from the files has been read successful 
 
-авг. 10, 2024 2:55:55 PM server.Server handleRead
+авг. 14, 2024 4:22:34 PM server.Server handleRead
 INFO: The client will send a request 
 
-авг. 10, 2024 2:55:55 PM server.Server handleRead
+авг. 14, 2024 4:22:34 PM server.Server handleRead
 INFO: Processing request... 
 
-авг. 10, 2024 2:55:55 PM server.RequestHandler handleRequest
+авг. 14, 2024 4:22:34 PM server.RequestHandler deserializeRequest
 INFO: The start a deserialization of command 
 
-авг. 10, 2024 2:55:55 PM server.RequestHandler getHandlerResult
+авг. 14, 2024 4:22:34 PM server.RequestHandler handleCommand
 INFO: The deserialization has completed 
 
-авг. 10, 2024 2:55:55 PM server.RequestHandler getHandlerResult
+авг. 14, 2024 4:22:34 PM server.RequestHandler handleCommand
 INFO: Command execution 
 
-авг. 10, 2024 2:55:55 PM server.RequestHandler getHandlerResult
+авг. 14, 2024 4:22:34 PM server.RequestHandler handleCommand
 INFO: Command{name='show', firstArg='null', secondArg='null'}
 
-авг. 10, 2024 2:55:55 PM server.Server handleRead
+авг. 14, 2024 4:22:34 PM server.Server handleRead
 WARNING: id = 1, name is 111, time creation is 21:02, number of participants = 111, establishment date is 2024-07-15, genre is JAZZ, the best album is 111, count sales of the best album = 111 
 id = 2, name is 222, time creation is 21:02, number of participants = 222, establishment date is 2024-07-15, genre is JAZZ, the best album is 222, count sales of the best album = 222 
 id = 3, name is eee, time creation is 21:02, number of participants = 333, establishment date is 2024-07-15, genre is JAZZ, the best album is eet, count sales of the best album = 333 
 id = 4, name is 442, time creation is 21:04, number of participants = 44, establishment date is 2024-07-15, genre is JAZZ, the best album is rewr, count sales of the best album = 4335 
 id = 5, name is dsa, time creation is 18:11, number of participants = 324, establishment date is 2024-07-22, genre is BLUES, the best album is das, count sales of the best album = 234 
 
-авг. 10, 2024 2:55:55 PM server.Server handleRead
+авг. 14, 2024 4:22:34 PM server.Server handleRead
 INFO: Preparing to send the request result 
 
-авг. 10, 2024 2:55:55 PM server.Server handleRead
+авг. 14, 2024 4:22:34 PM server.Server handleRead
 INFO: The server has sent the request result 
 
-авг. 10, 2024 2:55:56 PM server.Server handleRead
+авг. 14, 2024 4:22:35 PM server.Server handleRead
 INFO: The client will send a request 
 
-авг. 10, 2024 2:55:56 PM server.Server handleRead
+авг. 14, 2024 4:22:35 PM server.Server handleRead
 INFO: Processing request... 
 
-авг. 10, 2024 2:55:56 PM server.RequestHandler handleRequest
+авг. 14, 2024 4:22:35 PM server.RequestHandler deserializeRequest
 INFO: The start a deserialization of command 
 
-авг. 10, 2024 2:55:56 PM server.RequestHandler getHandlerResult
+авг. 14, 2024 4:22:35 PM server.RequestHandler handleCommand
 INFO: The deserialization has completed 
 
-авг. 10, 2024 2:55:56 PM server.RequestHandler getHandlerResult
+авг. 14, 2024 4:22:35 PM server.RequestHandler handleCommand
 INFO: Command execution 
 
-авг. 10, 2024 2:55:56 PM server.RequestHandler getHandlerResult
+авг. 14, 2024 4:22:35 PM server.RequestHandler handleCommand
 INFO: Command{name='', firstArg='null', secondArg='null'}
 
-авг. 10, 2024 2:55:56 PM server.Server handleRead
+авг. 14, 2024 4:22:35 PM server.Server handleRead
 WARNING: There's no such command, enter 'help' for see the list of available command 
 
-авг. 10, 2024 2:55:56 PM server.Server handleRead
+авг. 14, 2024 4:22:35 PM server.Server handleRead
 INFO: Preparing to send the request result 
 
-авг. 10, 2024 2:55:56 PM server.Server handleRead
+авг. 14, 2024 4:22:35 PM server.Server handleRead
 INFO: The server has sent the request result 
 
-авг. 10, 2024 2:55:57 PM server.Server handleRead
-INFO: The client will send a request 
-
-авг. 10, 2024 2:55:57 PM server.Server handleRead
-INFO: Processing request... 
-
-авг. 10, 2024 2:55:57 PM server.RequestHandler handleRequest
-INFO: The start a deserialization of command 
-
-авг. 10, 2024 2:55:57 PM server.RequestHandler getHandlerResult
-INFO: The deserialization has completed 
-
-авг. 10, 2024 2:55:57 PM server.RequestHandler getHandlerResult
-INFO: Command execution 
-
-авг. 10, 2024 2:55:57 PM server.RequestHandler getHandlerResult
-INFO: Command{name='clear', firstArg='null', secondArg='null'}
-
-авг. 10, 2024 2:55:57 PM server.Server handleRead
-WARNING: The music bands have been deleted successful 
-
-авг. 10, 2024 2:55:57 PM server.Server handleRead
-INFO: Preparing to send the request result 
-
-авг. 10, 2024 2:55:57 PM server.Server handleRead
-INFO: The server has sent the request result 
-
-авг. 10, 2024 2:55:58 PM server.Server handleRead
-INFO: The client will send a request 
-
-авг. 10, 2024 2:55:58 PM server.Server handleRead
-INFO: Processing request... 
-
-авг. 10, 2024 2:55:58 PM server.RequestHandler handleRequest
-INFO: The start a deserialization of command 
-
-авг. 10, 2024 2:55:58 PM server.RequestHandler getHandlerResult
-INFO: The deserialization has completed 
-
-авг. 10, 2024 2:55:58 PM server.RequestHandler getHandlerResult
-INFO: Command execution 
-
-авг. 10, 2024 2:55:58 PM server.RequestHandler getHandlerResult
-INFO: Command{name='', firstArg='null', secondArg='null'}
-
-авг. 10, 2024 2:55:58 PM server.Server handleRead
-WARNING: There's no such command, enter 'help' for see the list of available command 
-
-авг. 10, 2024 2:55:58 PM server.Server handleRead
-INFO: Preparing to send the request result 
-
-авг. 10, 2024 2:55:58 PM server.Server handleRead
-INFO: The server has sent the request result 
-
-авг. 10, 2024 2:56:01 PM server.Server handleRead
-INFO: The client will send a request 
-
-авг. 10, 2024 2:56:01 PM server.Server handleRead
-INFO: Processing request... 
-
-авг. 10, 2024 2:56:01 PM server.RequestHandler handleRequest
-INFO: The start a deserialization of command 
-
-авг. 10, 2024 2:56:01 PM server.RequestHandler getHandlerResult
-INFO: The deserialization has completed 
-
-авг. 10, 2024 2:56:01 PM server.RequestHandler getHandlerResult
-INFO: Command execution 
-
-авг. 10, 2024 2:56:01 PM server.RequestHandler getHandlerResult
-INFO: Command{name='', firstArg='null', secondArg='null'}
-
-авг. 10, 2024 2:56:01 PM server.Server handleRead
-WARNING: There's no such command, enter 'help' for see the list of available command 
-
-авг. 10, 2024 2:56:01 PM server.Server handleRead
-INFO: Preparing to send the request result 
-
-авг. 10, 2024 2:56:01 PM server.Server handleRead
-INFO: The server has sent the request result 
-
-авг. 10, 2024 2:56:11 PM server.Server handleRead
-INFO: The client will send a request 
-
-авг. 10, 2024 2:56:11 PM server.Server handleRead
-INFO: Processing request... 
-
-авг. 10, 2024 2:56:11 PM server.RequestHandler handleRequest
-INFO: The start a deserialization of command 
-
-авг. 10, 2024 2:56:11 PM server.RequestHandler getHandlerResult
-INFO: The deserialization has completed 
-
-авг. 10, 2024 2:56:11 PM server.RequestHandler getHandlerResult
-INFO: Command execution 
-
-авг. 10, 2024 2:56:11 PM server.RequestHandler getHandlerResult
-INFO: Command{name='add', firstArg='{
-  "name": "assad",
-  "creationDate": "2024-08-10T14:56:11.247411742",
-  "numberOfParticipants": 43,
-  "establishmentDate": "2024-08-10",
-  "genre": "JAZZ",
-  "bestAlbum": {
-    "name": "32",
-    "sales": 34
-  }
-}', secondArg='null'}
-
-авг. 10, 2024 2:56:11 PM server.Server handleRead
-WARNING: The music band has been added successful 
-
-авг. 10, 2024 2:56:11 PM server.Server handleRead
-INFO: Preparing to send the request result 
-
-авг. 10, 2024 2:56:11 PM server.Server handleRead
-INFO: The server has sent the request result 
-
-авг. 10, 2024 2:56:11 PM server.Server handleRead
-INFO: The client will send a request 
-
-авг. 10, 2024 2:56:11 PM server.Server handleRead
-INFO: Processing request... 
-
-авг. 10, 2024 2:56:11 PM server.RequestHandler handleRequest
-INFO: The start a deserialization of command 
-
-авг. 10, 2024 2:56:11 PM server.RequestHandler getHandlerResult
-INFO: The deserialization has completed 
-
-авг. 10, 2024 2:56:11 PM server.RequestHandler getHandlerResult
-INFO: Command execution 
-
-авг. 10, 2024 2:56:11 PM server.RequestHandler getHandlerResult
-INFO: Command{name='', firstArg='null', secondArg='null'}
-
-авг. 10, 2024 2:56:11 PM server.Server handleRead
-WARNING: There's no such command, enter 'help' for see the list of available command 
-
-авг. 10, 2024 2:56:11 PM server.Server handleRead
-INFO: Preparing to send the request result 
-
-авг. 10, 2024 2:56:11 PM server.Server handleRead
-INFO: The server has sent the request result 
-
-авг. 10, 2024 2:56:12 PM server.Server handleRead
-INFO: The client will send a request 
-
-авг. 10, 2024 2:56:12 PM server.Server handleRead
-INFO: Processing request... 
-
-авг. 10, 2024 2:56:12 PM server.RequestHandler handleRequest
-INFO: The start a deserialization of command 
-
-авг. 10, 2024 2:56:12 PM server.RequestHandler getHandlerResult
-INFO: The deserialization has completed 
-
-авг. 10, 2024 2:56:12 PM server.RequestHandler getHandlerResult
-INFO: Command execution 
-
-авг. 10, 2024 2:56:12 PM server.RequestHandler getHandlerResult
-INFO: Command{name='show', firstArg='null', secondArg='null'}
-
-авг. 10, 2024 2:56:12 PM server.Server handleRead
-WARNING: id = 1, name is assad, time creation is 14:56, number of participants = 43, establishment date is 2024-08-10, genre is JAZZ, the best album is 32, count sales of the best album = 34 
-
-авг. 10, 2024 2:56:12 PM server.Server handleRead
-INFO: Preparing to send the request result 
-
-авг. 10, 2024 2:56:12 PM server.Server handleRead
-INFO: The server has sent the request result 
-
-авг. 10, 2024 2:56:13 PM server.Server handleRead
-INFO: The client will send a request 
-
-авг. 10, 2024 2:56:13 PM server.Server handleRead
-INFO: Processing request... 
-
-авг. 10, 2024 2:56:13 PM server.RequestHandler handleRequest
-INFO: The start a deserialization of command 
-
-авг. 10, 2024 2:56:13 PM server.RequestHandler getHandlerResult
-INFO: The deserialization has completed 
-
-авг. 10, 2024 2:56:13 PM server.RequestHandler getHandlerResult
-INFO: Command execution 
-
-авг. 10, 2024 2:56:13 PM server.RequestHandler getHandlerResult
-INFO: Command{name='', firstArg='null', secondArg='null'}
-
-авг. 10, 2024 2:56:13 PM server.Server handleRead
-WARNING: There's no such command, enter 'help' for see the list of available command 
-
-авг. 10, 2024 2:56:13 PM server.Server handleRead
-INFO: Preparing to send the request result 
-
-авг. 10, 2024 2:56:13 PM server.Server handleRead
-INFO: The server has sent the request result 
-
-авг. 10, 2024 2:56:15 PM server.RequestHandler save
+авг. 14, 2024 4:22:36 PM server.RequestHandler save
 WARNING: The collection has been saved successful, the path of the file: 
 /home/valentin/Java_Projects/MusicBand/MusicBandServer/AUTOSAVE.json
-авг. 10, 2024 2:56:15 PM server.Server handleRead
+авг. 14, 2024 4:22:36 PM server.Server handleRead
 INFO: The client has disconnected 
 

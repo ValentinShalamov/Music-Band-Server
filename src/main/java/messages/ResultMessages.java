@@ -11,7 +11,6 @@ public class ResultMessages {
     public static final String MUSIC_BAND_HAS_BEEN_DELETED_SUCCESSFUL = "The music band has been deleted successful \n";
     public static final String MUSIC_BAND_HAS_BEEN_DELETED_SUCCESSFUL_ID = "The music band has been deleted successful, id = ";
     public static final String DELETED_MISTAKE = "The music band hasn't been deleted, please, make sure that such id is exists \n";
-    public static final String DELETED_MISTAKE_ID = "The music band hasn't been deleted, please, try again, id = ";
     public static final String COLLECTION_HAS_BEEN_DELETED = "The music bands have been deleted successful \n";
     public static final String SALES_BIGGER_THAN_MIN_ELEMENT = "The sales of the entered of the best album should be less than the min sales \n";
     public static final String EMPTY_COLLECTION_MISTAKE = "You can't add the band with min of the sales until" +
@@ -29,6 +28,7 @@ public class ResultMessages {
     public static final String INCORRECT_ARGUMENT = "You have used an incorrect argument for this command \n";
     public static final String NO_SUCH_COMMAND = "There's no such command, " +
             "enter 'help' for see the list of available command \n";
+    public static final String HISTORY_IS_EMPTY = "The history is empty \n";
 
     public static final String LIST_OF_AVAILABLE_COMMAND = """
             The list of available command:\s
@@ -44,7 +44,7 @@ public class ResultMessages {
             - remove_lower <count_sales>: delete the all music bands which have the sales less than will entered\s
             - history: show last 12 commands\s
             - min_by_best_album: show any music band who have min sales of the best album\s
-            - filter_by_best_album: show the all music bands who have the sales of the best album equals will entered\s
+            - filter_by_best_album <count_sales>: show the all music bands who have the sales of the best album equals will entered\s
             - print_field_asc_best_album: show the all music bands in ascending order of sales of the best album\s
             - execute_script : run a script from a file \s
             

@@ -3,12 +3,13 @@ package server;
 import com.google.gson.JsonSyntaxException;
 import command.Command;
 import command.CommandDeserializer;
-import logger.DefaultFileHandler;
+import logger.LoggerConfigurator;
 import manager.Manager;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static messages.ErrorMessages.*;
 import static messages.UserMessages.*;
 import static messages.ResultMessages.*;
 import static messages.ServerMessages.*;
@@ -17,29 +18,31 @@ public class RequestHandler {
     private final Manager manager;
     private final String AUTOSAVE_PATH = "AUTOSAVE.json";
     private final CommandDeserializer deserializer;
-    private static final Logger logger = Logger.getLogger(RequestHandler.class.getName());
+    private static final Logger logger = LoggerConfigurator.createDefaultLogger(RequestHandler.class.getName());
 
     public RequestHandler(Manager manager) {
         this.manager = manager;
         this.deserializer = new CommandDeserializer();
-        logger.addHandler(DefaultFileHandler.getFileHandler());
-        logger.setUseParentHandlers(false);
         Runtime.getRuntime().addShutdownHook(new Thread(() -> manager.save(AUTOSAVE_PATH)));
     }
 
-    public Command handleRequest(String request) {
+    public String getHandleRequestResult(String request) {
+        return handleCommand(deserializeRequest(request));
+    }
+
+    private Command deserializeRequest(String request) {
         logger.info(START_DESERIALIZATION);
         try {
             return deserializer.deserialize(request);
         } catch (JsonSyntaxException e) {
-            logger.log(Level.SEVERE, e.getMessage(), e);
+            logger.log(Level.WARNING, e.getMessage(), e);
             return null;
         }
     }
 
-    public String getHandlerResult(Command command) {
+    private String handleCommand(Command command) {
         if (command == null) {
-            return UNEXPECTED_ERROR;
+            return DESERIALIZATION_ERROR;
         }
         logger.info(DESERIALIZATION_COMPLETED);
         logger.info(COMMAND_EXECUTION);
@@ -59,7 +62,7 @@ public class RequestHandler {
                         return manager.addIfMin(deserializer.readMusicBand(command));
                     }
                     case "filter_by_best_album" -> {
-                        return manager.filterByBestAlbum(deserializer.readBestAlbum(command));
+                        return manager.filterByBestAlbum(Long.parseLong(command.getFirstArg()));
                     }
                     case "remove" -> {
                         return manager.removeById(Integer.parseInt(command.getFirstArg()));

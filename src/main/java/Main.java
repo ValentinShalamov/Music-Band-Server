@@ -1,5 +1,5 @@
 import file.FileManager;
-import logger.DefaultFileHandler;
+import logger.LoggerConfigurator;
 import manager.CollectionManager;
 import manager.Manager;
 import music.MusicBand;
@@ -13,10 +13,9 @@ import java.util.logging.Logger;
 
 public class Main {
     public static void main(String[] args) {
-        Logger logger = Logger.getLogger(Main.class.getName());
-        logger.addHandler(DefaultFileHandler.getFileHandler());
-        logger.setUseParentHandlers(false);
+        Logger logger = LoggerConfigurator.createDefaultLogger(Main.class.getName());
         try {
+            logger = LoggerConfigurator.createDefaultLogger(Main.class.getName());
             HashSet<MusicBand> musicBands = new HashSet<>();
             CollectionManager collectionManager = new CollectionManager(musicBands);
             FileManager fileManager = new FileManager(collectionManager);

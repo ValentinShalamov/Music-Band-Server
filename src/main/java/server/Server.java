@@ -1,6 +1,6 @@
 package server;
 
-import logger.DefaultFileHandler;
+import logger.LoggerConfigurator;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -15,6 +15,7 @@ import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static messages.ErrorMessages.*;
 import static messages.ServerMessages.*;
 
 public class Server {
@@ -24,7 +25,7 @@ public class Server {
     private final byte[] bytes = new byte[buffer.capacity()];
     private final RequestHandler requestHandler;
 
-    private static final Logger logger = Logger.getLogger(Server.class.getName());
+    private static final Logger logger = LoggerConfigurator.createDefaultLogger(Server.class.getName());
 
     public Server(RequestHandler requestHandler, String address, int port) throws IOException {
         this.serverSocketChannel = ServerSocketChannel.open();
@@ -33,13 +34,13 @@ public class Server {
         this.selector = Selector.open();
         this.serverSocketChannel.register(selector, SelectionKey.OP_ACCEPT);
         this.requestHandler = requestHandler;
-        logger.addHandler(DefaultFileHandler.getFileHandler());
-        logger.setUseParentHandlers(false);
     }
 
     public void start() {
         try {
+            logger.setUseParentHandlers(true);
             logger.info(SERVER_RUNNING);
+            logger.setUseParentHandlers(false);
             Set<SelectionKey> selectedKeys;
             Iterator<SelectionKey> iter;
             SelectionKey key;
@@ -88,7 +89,7 @@ public class Server {
             buffer.get(bytes, 0, buffer.remaining());
             request = new String(bytes, 0, r);
             logger.info(PROCESSING_REQUEST);
-            result = requestHandler.getHandlerResult(requestHandler.handleRequest(request));
+            result = requestHandler.getHandleRequestResult(request);
             logger.log(Level.WARNING, result);
             logger.info(PREPARING_TO_SEND);
             client.write(ByteBuffer.wrap(result.getBytes(StandardCharsets.UTF_8)));

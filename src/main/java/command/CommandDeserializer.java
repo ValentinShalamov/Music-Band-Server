@@ -4,7 +4,6 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import file.LocalDateAdapter;
 import file.LocalDateTimeAdapter;
-import music.BestAlbum;
 import music.MusicBand;
 
 import java.time.LocalDate;
@@ -22,10 +21,6 @@ public class CommandDeserializer {
 
     public MusicBand readMusicBand(Command command) {
         return gson.fromJson(command.getFirstArg(), MusicBand.class);
-    }
-
-    public BestAlbum readBestAlbum(Command command) {
-        return gson.fromJson(command.getFirstArg(), BestAlbum.class);
     }
 
 }
