@@ -9,10 +9,12 @@ import manager.Manager;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static messages.ErrorMessages.*;
-import static messages.UserMessages.*;
-import static messages.ResultMessages.*;
+import static messages.ErrorMessages.DESERIALIZATION_ERROR;
+import static messages.ResultMessages.INCORRECT_ARGUMENT;
+import static messages.ResultMessages.NO_SUCH_COMMAND;
 import static messages.ServerMessages.*;
+import static messages.UserMessages.GREET_MESSAGE;
+import static messages.UserMessages.WORK_WITH_EMPTY_COLLECTION;
 
 public class RequestHandler {
     private final Manager manager;

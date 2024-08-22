@@ -1,29 +1,27 @@
 package server;
 
+import exceptions.ClientDisconnectedException;
+import exceptions.NotFullMessageException;
 import logger.LoggerConfigurator;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
-import java.nio.channels.SelectionKey;
-import java.nio.channels.Selector;
-import java.nio.channels.ServerSocketChannel;
-import java.nio.channels.SocketChannel;
+import java.nio.channels.*;
 import java.nio.charset.StandardCharsets;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static messages.ErrorMessages.*;
+import static messages.ErrorMessages.UNEXPECTED_ERROR;
 import static messages.ServerMessages.*;
 
 public class Server {
     private final ServerSocketChannel serverSocketChannel;
     private final Selector selector;
-    private final ByteBuffer buffer = ByteBuffer.allocate(1024 * 1024);
-    private final byte[] bytes = new byte[buffer.capacity()];
     private final RequestHandler requestHandler;
+    private final MessageReader messageReader;
 
     private static final Logger logger = LoggerConfigurator.createDefaultLogger(Server.class.getName());
 
@@ -34,6 +32,7 @@ public class Server {
         this.selector = Selector.open();
         this.serverSocketChannel.register(selector, SelectionKey.OP_ACCEPT);
         this.requestHandler = requestHandler;
+        this.messageReader = new MessageReader();
     }
 
     public void start() {
@@ -64,37 +63,63 @@ public class Server {
         }
     }
 
+    private ByteBuffer getMessageForSend(String resultMessage) {
+        byte[] intValueBox = ByteBuffer.allocate(4).putInt(resultMessage.length()).array();
+        byte[] requestBytes = resultMessage.getBytes(StandardCharsets.UTF_8);
+
+        byte[] message = new byte[intValueBox.length + requestBytes.length];
+        for (int i = 0; i < message.length; i++) {
+            if (i < 4) {
+                message[i] = intValueBox[i];
+            } else {
+                message[i] = requestBytes[i - 4];
+            }
+        }
+        return ByteBuffer.wrap(message);
+    }
+
     private void handleAccept(SelectionKey key) throws IOException {
         SocketChannel client = ((ServerSocketChannel) key.channel()).accept();
         client.configureBlocking(false);
         client.register(selector, SelectionKey.OP_READ);
         logger.info(NEW_CLIENT_CONNECTED + client.getRemoteAddress() + "\n");
-        buffer.flip();
-        client.write(ByteBuffer.wrap(requestHandler.readEnvironment().getBytes(StandardCharsets.UTF_8)));
-        buffer.clear();
+        client.write(getMessageForSend(requestHandler.readEnvironment()));
+        System.out.println(NEW_CLIENT_CONNECTED);
     }
 
     private void handleRead(SelectionKey key) throws IOException {
         SocketChannel client = (SocketChannel) key.channel();
         String request;
-        String result;
-        int r = client.read(buffer);
-        if (r == -1) {
+        try {
+            logger.info(GETTING_REQUEST_FROM_CLIENT);
+            request = messageReader.getFullMessage(client);
+        } catch (NotFullMessageException e) {
+            return;
+        } catch (ClientDisconnectedException ex) {
             requestHandler.save();
             client.close();
             logger.info(CLIENT_HAS_DISCONNECTED);
-        } else {
-            logger.info(GETTING_REQUEST_FROM_CLIENT);
-            buffer.flip();
-            buffer.get(bytes, 0, buffer.remaining());
-            request = new String(bytes, 0, r);
-            logger.info(PROCESSING_REQUEST);
-            result = requestHandler.getHandleRequestResult(request);
-            logger.log(Level.WARNING, result);
-            logger.info(PREPARING_TO_SEND);
-            client.write(ByteBuffer.wrap(result.getBytes(StandardCharsets.UTF_8)));
-            logger.info(SENDING_ANSWER_TO_CLIENT);
-            buffer.clear();
+            return;
         }
+        logger.info(PROCESSING_REQUEST);
+        String result = requestHandler.getHandleRequestResult(request);
+        logger.log(Level.WARNING, result);
+        logger.info(PREPARING_TO_SEND);
+
+        // This code uses for a test
+//        ByteBuffer buffer = getMessageForSend(result);
+//        for (int i = 0; i < buffer.array().length; i++) {
+//            ByteBuffer b = ByteBuffer.wrap(new byte[] {buffer.get(i)});
+//            client.write(b);
+//            try {
+//                Thread.sleep(10);
+//            } catch (InterruptedException e) {
+//
+//            }
+//        }
+
+        // This code must be commented if you want to use the code is above
+        client.write(getMessageForSend(result));
+        logger.info(SENDING_ANSWER_TO_CLIENT);
     }
 }
