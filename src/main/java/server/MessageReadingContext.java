@@ -2,11 +2,11 @@ package server;
 
 import java.nio.ByteBuffer;
 
-public class ClientServiceInfo {
+public class MessageReadingContext {
     private ByteBuffer buffer;
     private boolean isMessageBufferReady;
 
-    public ClientServiceInfo() {
+    public MessageReadingContext() {
         this.buffer = ByteBuffer.allocate(4);
         this.isMessageBufferReady = false;
     }
@@ -19,7 +19,7 @@ public class ClientServiceInfo {
         this.isMessageBufferReady = flag;
     }
 
-    public void setNewBufferLength(int length) {
+    public void setNewBufferWithLength(int length) {
         this.buffer = ByteBuffer.allocate(length);
     }
 

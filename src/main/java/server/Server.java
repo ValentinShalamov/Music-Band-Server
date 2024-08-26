@@ -9,11 +9,13 @@ import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.*;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static messages.ErrorMessages.DESERIALIZATION_ERROR;
 import static messages.ErrorMessages.UNEXPECTED_ERROR;
 import static messages.ServerMessages.*;
 
@@ -66,15 +68,8 @@ public class Server {
     private ByteBuffer getMessageForSend(String resultMessage) {
         byte[] intValueBox = ByteBuffer.allocate(4).putInt(resultMessage.length()).array();
         byte[] requestBytes = resultMessage.getBytes(StandardCharsets.UTF_8);
-
-        byte[] message = new byte[intValueBox.length + requestBytes.length];
-        for (int i = 0; i < message.length; i++) {
-            if (i < 4) {
-                message[i] = intValueBox[i];
-            } else {
-                message[i] = requestBytes[i - 4];
-            }
-        }
+        byte[] message = Arrays.copyOf(intValueBox, intValueBox.length + requestBytes.length);
+        System.arraycopy(requestBytes, 0, message, 4, requestBytes.length);
         return ByteBuffer.wrap(message);
     }
 
@@ -105,21 +100,11 @@ public class Server {
         String result = requestHandler.getHandleRequestResult(request);
         logger.log(Level.WARNING, result);
         logger.info(PREPARING_TO_SEND);
-
-        // This code uses for a test
-//        ByteBuffer buffer = getMessageForSend(result);
-//        for (int i = 0; i < buffer.array().length; i++) {
-//            ByteBuffer b = ByteBuffer.wrap(new byte[] {buffer.get(i)});
-//            client.write(b);
-//            try {
-//                Thread.sleep(10);
-//            } catch (InterruptedException e) {
-//
-//            }
-//        }
-
-        // This code must be commented if you want to use the code is above
         client.write(getMessageForSend(result));
+        if (result.equals(DESERIALIZATION_ERROR)) {
+            messageReader.deleteClient(client);
+            client.close();
+        }
         logger.info(SENDING_ANSWER_TO_CLIENT);
     }
 }

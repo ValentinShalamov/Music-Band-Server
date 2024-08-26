@@ -41,37 +41,35 @@ public class ServerTest {
     }
 
     @Test
-    void test() {
-        try {
-            Mockito.when(requestHandler.readEnvironment()).thenReturn("read environment");
-            Mockito.when(requestHandler.getHandleRequestResult(Mockito.anyString())).thenReturn("good");
-            ArgumentCaptor<String> captor = ArgumentCaptor.forClass(String.class);
+    void test() throws IOException {
 
-            connectFirstClient();
-            String greet = readMessageForFirstClient();
-            Assertions.assertEquals("read environment", greet);
-            sendFirstHalfRequestForFirstClient("clear");
+        Mockito.when(requestHandler.readEnvironment()).thenReturn("read environment");
+        Mockito.when(requestHandler.getHandleRequestResult(Mockito.anyString())).thenReturn("good");
+        ArgumentCaptor<String> captor = ArgumentCaptor.forClass(String.class);
 
-            connectSecondClient();
-            greet = readMessageForSecondClient();
-            Assertions.assertEquals("read environment", greet);
-            sendFirstHalfRequestForSecondClient("info");
+        connectFirstClient();
+        String greet = readMessageForFirstClient();
+        Assertions.assertEquals("read environment", greet);
+        sendFirstHalfRequestForFirstClient("clear");
 
-            sendSecondHalfRequestForFirstClient("clear");
-            String messageFirst = readMessageForFirstClient();
-            Assertions.assertEquals("good", messageFirst);
-            Mockito.verify(requestHandler).getHandleRequestResult(captor.capture());
-            Assertions.assertEquals("clear", captor.getValue());
+        connectSecondClient();
+        greet = readMessageForSecondClient();
+        Assertions.assertEquals("read environment", greet);
+        sendFirstHalfRequestForSecondClient("info");
 
-            sendSecondHalfRequestForSecondClient("info");
-            String messageSecond = readMessageForSecondClient();
-            Assertions.assertEquals("good", messageSecond);
-            Mockito.verify(requestHandler, Mockito.times(2)).getHandleRequestResult(captor.capture());
-            Assertions.assertEquals("info", captor.getValue());
+        sendSecondHalfRequestForFirstClient("clear");
+        String messageFirst = readMessageForFirstClient();
+        Assertions.assertEquals("good", messageFirst);
+        Mockito.verify(requestHandler).getHandleRequestResult(captor.capture());
+        Assertions.assertEquals("clear", captor.getValue());
 
-        } catch (IOException e) {
-            throw new RuntimeException(e.getMessage());
-        }
+        sendSecondHalfRequestForSecondClientByOneByte("info");
+        String messageSecond = readMessageForSecondClient();
+        Assertions.assertEquals("good", messageSecond);
+        Mockito.verify(requestHandler, Mockito.times(2)).getHandleRequestResult(captor.capture());
+        Assertions.assertEquals("info", captor.getValue());
+
+
     }
 
     private void connectFirstClient() throws IOException {
@@ -120,7 +118,6 @@ public class ServerTest {
         firstOutputStream.flush();
     }
 
-
     private void connectSecondClient() throws IOException {
         secondSocket.connect(new InetSocketAddress(InetAddress.getByName("localhost"), 8888), 10000);
         secondInputStream = secondSocket.getInputStream();
@@ -144,7 +141,7 @@ public class ServerTest {
         secondOutputStream.flush();
     }
 
-    private void sendSecondHalfRequestForSecondClient(String request) throws IOException {
+    private void sendSecondHalfRequestForSecondClientByOneByte(String request) throws IOException {
         byte[] message = getMessageForSend(request);
 
         for (int i = message.length / 2; i < message.length; i++) {
