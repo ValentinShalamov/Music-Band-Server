@@ -2,6 +2,7 @@ package server;
 
 import exceptions.ClientDisconnectedException;
 import exceptions.NotFullMessageException;
+import exceptions.UnsupportedClientException;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -11,6 +12,7 @@ import java.util.HashMap;
 
 public class MessageReader {
     private final HashMap<SocketChannel, MessageReadingContext> clientInfoMap = new HashMap<>();
+    private final int LIMIT_MESSAGE_LENGTH = 1024;
 
     public String getFullMessage(SocketChannel client) {
         try {
@@ -24,6 +26,9 @@ public class MessageReader {
                     throw new NotFullMessageException();
                 } else {
                     int messageLength = ByteBuffer.wrap(buffer.array()).getInt();
+                    if (messageLength > LIMIT_MESSAGE_LENGTH) {
+                        throw new IllegalArgumentException();
+                    }
                     MessageReadingContext messageReadingContext = clientInfoMap.get(client);
                     messageReadingContext.setNewBufferWithLength(messageLength);
                     messageReadingContext.setReadyMessageBuffer(true);
@@ -50,6 +55,9 @@ public class MessageReader {
                 } else {
                     if (buffer.capacity() == 4 && !messageReadingContext.isMessageBufferReady()) {
                         int messageLength = ByteBuffer.wrap(buffer.array()).getInt();
+                        if (messageLength > LIMIT_MESSAGE_LENGTH) {
+                            throw new IllegalArgumentException();
+                        }
                         messageReadingContext.setNewBufferWithLength(messageLength);
                         messageReadingContext.setReadyMessageBuffer(true);
                         buffer = messageReadingContext.getBuffer();
@@ -69,6 +77,9 @@ public class MessageReader {
             }
         } catch (IOException e) {
             System.out.println(e.getMessage());
+        } catch (IllegalArgumentException e) {
+            clientInfoMap.remove(client);
+            throw new UnsupportedClientException();
         }
         return null;
     }

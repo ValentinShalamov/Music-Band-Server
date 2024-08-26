@@ -2,6 +2,7 @@ package server;
 
 import exceptions.ClientDisconnectedException;
 import exceptions.NotFullMessageException;
+import exceptions.UnsupportedClientException;
 import logger.LoggerConfigurator;
 
 import java.io.IOException;
@@ -15,8 +16,7 @@ import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static messages.ErrorMessages.DESERIALIZATION_ERROR;
-import static messages.ErrorMessages.UNEXPECTED_ERROR;
+import static messages.ErrorMessages.*;
 import static messages.ServerMessages.*;
 
 public class Server {
@@ -66,8 +66,8 @@ public class Server {
     }
 
     private ByteBuffer getMessageForSend(String resultMessage) {
-        byte[] intValueBox = ByteBuffer.allocate(4).putInt(resultMessage.length()).array();
         byte[] requestBytes = resultMessage.getBytes(StandardCharsets.UTF_8);
+        byte[] intValueBox = ByteBuffer.allocate(4).putInt(requestBytes.length).array();
         byte[] message = Arrays.copyOf(intValueBox, intValueBox.length + requestBytes.length);
         System.arraycopy(requestBytes, 0, message, 4, requestBytes.length);
         return ByteBuffer.wrap(message);
@@ -90,10 +90,14 @@ public class Server {
             request = messageReader.getFullMessage(client);
         } catch (NotFullMessageException e) {
             return;
-        } catch (ClientDisconnectedException ex) {
+        } catch (ClientDisconnectedException e) {
             requestHandler.save();
             client.close();
             logger.info(CLIENT_HAS_DISCONNECTED);
+            return;
+        } catch (UnsupportedClientException e) {
+            client.write(getMessageForSend(UNSUPPORTED_CLIENT));
+            client.close();
             return;
         }
         logger.info(PROCESSING_REQUEST);
