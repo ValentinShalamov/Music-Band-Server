@@ -37,7 +37,7 @@ public class Server {
         this.messageReader = new MessageReader();
     }
 
-    public void start() {
+    public void start1() {
         try {
             logger.setUseParentHandlers(true);
             logger.info(SERVER_RUNNING);
@@ -65,6 +65,35 @@ public class Server {
         }
     }
 
+    public void start() {
+        logger.setUseParentHandlers(true);
+        logger.info(SERVER_RUNNING);
+        logger.setUseParentHandlers(false);
+        Set<SelectionKey> selectedKeys;
+        Iterator<SelectionKey> iter;
+        SelectionKey key;
+        while (true) {
+            try {
+                selector.select();
+                selectedKeys = selector.selectedKeys();
+                iter = selectedKeys.iterator();
+                while (iter.hasNext()) {
+                    key = iter.next();
+                    iter.remove();
+                    if (key.isAcceptable()) {
+                        handleAccept(key);
+                    }
+                    if (key.isReadable()) {
+                        handleRead(key);
+                    }
+                }
+            } catch (IOException e) {
+                logger.log(Level.SEVERE, UNEXPECTED_ERROR, e);
+            }
+
+        }
+    }
+
     private ByteBuffer getMessageForSend(String resultMessage) {
         byte[] requestBytes = resultMessage.getBytes(StandardCharsets.UTF_8);
         byte[] intValueBox = ByteBuffer.allocate(4).putInt(requestBytes.length).array();
@@ -79,7 +108,6 @@ public class Server {
         client.register(selector, SelectionKey.OP_READ);
         logger.info(NEW_CLIENT_CONNECTED + client.getRemoteAddress() + "\n");
         client.write(getMessageForSend(requestHandler.readEnvironment()));
-        System.out.println(NEW_CLIENT_CONNECTED);
     }
 
     private void handleRead(SelectionKey key) throws IOException {
@@ -93,22 +121,30 @@ public class Server {
         } catch (ClientDisconnectedException e) {
             requestHandler.save();
             client.close();
+            logger.info(CONNECTION_CLOSED);
             logger.info(CLIENT_HAS_DISCONNECTED);
             return;
         } catch (UnsupportedClientException e) {
-            client.write(getMessageForSend(UNSUPPORTED_CLIENT));
+            logger.info(UNSUPPORTED_CLIENT);
             client.close();
+            logger.info(CONNECTION_CLOSED);
             return;
         }
         logger.info(PROCESSING_REQUEST);
         String result = requestHandler.getHandleRequestResult(request);
         logger.log(Level.WARNING, result);
+        if (result.equals(DESERIALIZATION_ERROR)) {
+            logger.info(PREPARING_TO_SEND);
+            client.write(getMessageForSend(DESERIALIZATION_ERROR));
+            logger.info(SENDING_ANSWER_TO_CLIENT);
+            messageReader.deleteClient(client);
+            logger.info(DELETING_SUCCESSFUL);
+            client.close();
+            logger.info(CONNECTION_CLOSED);
+            return;
+        }
         logger.info(PREPARING_TO_SEND);
         client.write(getMessageForSend(result));
-        if (result.equals(DESERIALIZATION_ERROR)) {
-            messageReader.deleteClient(client);
-            client.close();
-        }
         logger.info(SENDING_ANSWER_TO_CLIENT);
     }
 }

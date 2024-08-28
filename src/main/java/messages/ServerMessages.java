@@ -12,4 +12,7 @@ public class ServerMessages {
     public static final String START_DESERIALIZATION = "The start a deserialization of command \n";
     public static final String DESERIALIZATION_COMPLETED = "The deserialization has completed \n";
     public static final String COMMAND_EXECUTION = "Command execution \n";
+    public static final String DELETING_SUCCESSFUL = "The client has deleted successful \n";
+    public static final String FULL_REQUEST = "The full request is from client : ";
+    public static final String CONNECTION_CLOSED = "The connection has closed successful \n";
 }
