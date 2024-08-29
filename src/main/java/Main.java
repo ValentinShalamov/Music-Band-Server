@@ -21,7 +21,7 @@ public class Main {
             FileManager fileManager = new FileManager(collectionManager);
             Manager manager = new Manager(collectionManager, fileManager);
             RequestHandler requestHandler = new RequestHandler(manager);
-            Server server = new Server(requestHandler, "localhost", 8888);
+            Server server = new Server(requestHandler, "193.124.115.131", 8888);
             server.start();
         } catch (IOException e) {
             logger.log(Level.SEVERE, e.getMessage(), e);
