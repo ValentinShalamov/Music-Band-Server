@@ -128,6 +128,8 @@ public class Server {
             logger.info(SENDING_ANSWER_TO_CLIENT);
         } catch (IOException e) {
             logger.info(UNSUPPORTED_CLIENT);
+            messageReader.deleteClient(client);
+            logger.info(DELETING_SUCCESSFUL);
             client.close();
             logger.info(CONNECTION_CLOSED);
             logger.log(Level.SEVERE, CHANNEL_FAILURE, e);
