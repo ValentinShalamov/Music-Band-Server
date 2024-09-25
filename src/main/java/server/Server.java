@@ -62,7 +62,6 @@ public class Server {
             } catch (IOException e) {
                 logger.log(Level.SEVERE, UNEXPECTED_ERROR, e);
             }
-
         }
     }
 
@@ -80,7 +79,7 @@ public class Server {
             client.configureBlocking(false);
             client.register(selector, SelectionKey.OP_READ);
             logger.info(NEW_CLIENT_CONNECTED + client.getRemoteAddress() + "\n");
-            client.write(getMessageForSend(requestHandler.readEnvironment()));
+            client.write(getMessageForSend(requestHandler.readGreetMessage()));
         } catch (IOException e) {
             client.close();
             logger.info(CONNECTION_CLOSED);
@@ -99,7 +98,6 @@ public class Server {
             } catch (NotFullMessageException e) {
                 return;
             } catch (ClientDisconnectedException e) {
-                requestHandler.save();
                 client.close();
                 logger.info(CONNECTION_CLOSED);
                 logger.info(CLIENT_HAS_DISCONNECTED);
@@ -110,8 +108,10 @@ public class Server {
                 logger.info(CONNECTION_CLOSED);
                 return;
             }
+
+            MessageReadingContext context = messageReader.getMessageReadingContext(client);
             logger.info(PROCESSING_REQUEST);
-            String result = requestHandler.getHandleRequestResult(request);
+            String result = requestHandler.getHandleRequestResult(request, context);
             logger.log(Level.WARNING, result);
             if (result.equals(DESERIALIZATION_ERROR)) {
                 logger.info(PREPARING_TO_SEND);

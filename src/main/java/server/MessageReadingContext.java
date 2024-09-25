@@ -1,10 +1,13 @@
 package server;
 
+import user.User;
+
 import java.nio.ByteBuffer;
 
 public class MessageReadingContext {
     private ByteBuffer buffer;
     private boolean isMessageBufferReady;
+    private User user;
 
     public MessageReadingContext() {
         this.buffer = ByteBuffer.allocate(4);
@@ -25,5 +28,13 @@ public class MessageReadingContext {
 
     public ByteBuffer getBuffer() {
         return buffer;
+    }
+
+    public User getUser() {
+        return user;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
     }
 }

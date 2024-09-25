@@ -5,6 +5,7 @@ import command.Command;
 import command.CommandDeserializer;
 import logger.LoggerConfigurator;
 import manager.Manager;
+import user.User;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -13,23 +14,20 @@ import static messages.ErrorMessages.DESERIALIZATION_ERROR;
 import static messages.ResultMessages.INCORRECT_ARGUMENT;
 import static messages.ResultMessages.NO_SUCH_COMMAND;
 import static messages.ServerMessages.*;
-import static messages.UserMessages.GREET_MESSAGE;
-import static messages.UserMessages.WORK_WITH_EMPTY_COLLECTION;
+import static messages.UserMessages.*;
 
 public class RequestHandler {
     private final Manager manager;
-    private final String AUTOSAVE_PATH = "AUTOSAVE.json";
     private final CommandDeserializer deserializer;
     private static final Logger logger = LoggerConfigurator.createDefaultLogger(RequestHandler.class.getName());
 
     public RequestHandler(Manager manager) {
         this.manager = manager;
         this.deserializer = new CommandDeserializer();
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> manager.save(AUTOSAVE_PATH)));
     }
 
-    public String getHandleRequestResult(String request) {
-        return handleCommand(deserializeRequest(request));
+    public String getHandleRequestResult(String request, MessageReadingContext context) {
+        return handleCommand(deserializeRequest(request), context);
     }
 
     private Command deserializeRequest(String request) {
@@ -42,9 +40,16 @@ public class RequestHandler {
         }
     }
 
-    private String handleCommand(Command command) {
+    private String handleCommand(Command command, MessageReadingContext context) {
         if (command == null) {
             return DESERIALIZATION_ERROR;
+        }
+        User user = context.getUser();
+        if (user == null && (!command.getName().equals("log") && !command.getName().equals("reg"))) {
+            return AUTHORIZATION_ERROR;
+        }
+        if (user != null && (command.getName().equals("log") || command.getName().equals("reg"))) {
+            return AUTHENTICATION_ALREADY_EXECUTED;
         }
         logger.info(DESERIALIZATION_COMPLETED);
         logger.info(COMMAND_EXECUTION);
@@ -52,25 +57,29 @@ public class RequestHandler {
         try {
             if (hasTwoArg(command)) {
                 if (command.getName().equals("update")) {
-                    return manager.updateById(deserializer.readMusicBand(command), Integer.parseInt(command.getSecondArg()));
+                    return manager.updateById(deserializer.readMusicBand(command), Integer.parseInt(command.getSecondArg()), user);
+                } else if (command.getName().equals("log")) {
+                    return manager.initUser(command.getFirstArg(), command.getSecondArg(), context);
+                } else if (command.getName().equals("reg")) {
+                    return manager.regUser(command.getFirstArg(), command.getSecondArg());
                 }
                 return NO_SUCH_COMMAND;
             } else if (hasOneArg(command)) {
                 switch (command.getName()) {
                     case "add" -> {
-                        return manager.add(deserializer.readMusicBand(command));
+                        return manager.add(deserializer.readMusicBand(command), user);
                     }
                     case "add_if_min" -> {
-                        return manager.addIfMin(deserializer.readMusicBand(command));
+                        return manager.addIfMin(deserializer.readMusicBand(command), user);
                     }
                     case "filter_by_best_album" -> {
-                        return manager.filterByBestAlbum(Long.parseLong(command.getFirstArg()));
+                        return manager.filterByBestAlbum(Long.parseLong(command.getFirstArg()), user);
                     }
                     case "remove" -> {
-                        return manager.removeById(Integer.parseInt(command.getFirstArg()));
+                        return manager.removeById(Integer.parseInt(command.getFirstArg()), user);
                     }
                     case "remove_lower" -> {
-                        return manager.removeLower(Long.parseLong(command.getFirstArg()));
+                        return manager.removeLower(Long.parseLong(command.getFirstArg()), user);
                     }
                     default -> {
                         return NO_SUCH_COMMAND;
@@ -79,25 +88,28 @@ public class RequestHandler {
             } else {
                 switch (command.getName()) {
                     case "help" -> {
-                        return manager.help();
+                        return manager.help(user);
                     }
                     case "info" -> {
-                        return manager.info();
+                        return manager.info(user);
                     }
                     case "show" -> {
-                        return manager.show();
+                        return manager.show(user);
+                    }
+                    case "show_mine" -> {
+                        return manager.showMine(user);
                     }
                     case "clear" -> {
-                        return manager.clear();
+                        return manager.clear(user);
                     }
                     case "history" -> {
-                        return manager.history();
+                        return manager.history(user);
                     }
                     case "min_by_best_album" -> {
-                        return manager.minByBestAlbum();
+                        return manager.minByBestAlbum(user);
                     }
                     case "print_field_asc_best_album" -> {
-                        return manager.printFieldAscBestAlbum();
+                        return manager.printFieldAscBestAlbum(user);
                     }
                     default -> {
                         return NO_SUCH_COMMAND;
@@ -109,32 +121,15 @@ public class RequestHandler {
         }
     }
 
-    private boolean hasOneArg (Command command){
+    private boolean hasOneArg(Command command) {
         return command.getFirstArg() != null;
     }
 
-    private boolean hasTwoArg (Command command){
+    private boolean hasTwoArg(Command command) {
         return command.getFirstArg() != null && command.getSecondArg() != null;
     }
 
-    public void save() {
-        logger.log(Level.WARNING, manager.save(AUTOSAVE_PATH));
-    }
-
-    public String readEnvironment() {
-        logger.info(READING_ENVIRONMENT);
-        StringBuilder sb = new StringBuilder();
-        sb.append(GREET_MESSAGE);
-        String readResult;
-        String env = System.getenv("SAVED_COLLECTION");
-        if (env == null) {
-            readResult = WORK_WITH_EMPTY_COLLECTION;
-            sb.append(WORK_WITH_EMPTY_COLLECTION);
-        } else {
-            readResult = manager.read(env);
-            sb.append(readResult);
-        }
-        logger.info(readResult);
-        return sb.toString();
+    public String readGreetMessage() {
+        return GREET_MESSAGE;
     }
 }

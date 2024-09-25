@@ -14,6 +14,10 @@ public class MessageReader {
     private final HashMap<SocketChannel, MessageReadingContext> clientInfoMap = new HashMap<>();
     private final int LIMIT_MESSAGE_LENGTH = 1024;
 
+    public MessageReadingContext getMessageReadingContext(SocketChannel socketChannel) {
+        return clientInfoMap.get(socketChannel);
+    }
+
     public String getFullMessage(SocketChannel client) {
         try {
             int read;
