@@ -1,18 +1,22 @@
 package manager;
 
 import music.MusicBand;
+import user.User;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.*;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Set;
 
 import static messages.ResultMessages.*;
 
-public class CashManager {
+public class CacheManager {
     private Set<MusicBand> musicBands;
     private final LocalDateTime localDateTime;
 
-    public CashManager(Set<MusicBand> musicBands) {
+
+    public CacheManager(Set<MusicBand> musicBands) {
         this.musicBands = musicBands;
         this.localDateTime = LocalDateTime.now();
     }
@@ -40,14 +44,15 @@ public class CashManager {
         }
     }
 
-    public String showMine(int userId) {
+    public String showMine(User user) {
+        int userId = user.id();
         if (musicBands.stream()
-                .noneMatch(mb -> mb.getUser().getId() == userId)) {
+                .noneMatch(mb -> mb.getUser().id() == userId)) {
             return NO_HAVE_BANDS;
         } else {
             StringBuilder sb = new StringBuilder();
             musicBands.stream()
-                    .filter((band) -> band.getUser().getId() == userId)
+                    .filter((band) -> band.getUser().id() == userId)
                     .sorted(Comparator.comparingLong(MusicBand::getId))
                     .forEach(sb::append);
             return sb.toString();
@@ -58,29 +63,31 @@ public class CashManager {
         musicBands.add(musicBand);
     }
 
-    public void updateById(MusicBand musicBand, long id) {
-        removeById(id);
+    public void updateById(MusicBand musicBand, long bandId) {
+        removeById(bandId);
         musicBands.add(musicBand);
     }
 
-    public void removeById(long id) {
-        musicBands.removeIf((band) -> band.getId() == id);
+    public void removeById(long bandId) {
+        musicBands.removeIf((band) -> band.getId() == bandId);
     }
 
-    public void clear(int userId) {
-        musicBands.removeIf((band) -> band.getUser().getId() == userId);
+    public void clear(User user) {
+        int userId = user.id();
+        musicBands.removeIf((band) -> band.getUser().id() == userId);
     }
 
-    public String removeLower(long sales, int userId) {
+    public String removeLower(long sales, User user) {
+        int userId = user.id();
         if (musicBands.stream()
-                .noneMatch(mb -> mb.getUser().getId() == userId)) {
+                .noneMatch(mb -> mb.getUser().id() == userId)) {
             return NO_HAVE_BANDS;
         }
         StringBuilder builder = new StringBuilder();
         musicBands.stream()
-                .filter(mb -> mb.getUser().getId() == userId && mb.getBestAlbum().sales() < sales)
+                .filter(mb -> mb.getUser().id() == userId && mb.getBestAlbum().sales() < sales)
                 .forEach(mb -> builder.append(MUSIC_BAND_HAS_BEEN_DELETED_SUCCESSFUL_ID).append(mb.getId()).append('\n'));
-        musicBands.removeIf(mb -> mb.getUser().getId() == userId && mb.getBestAlbum().sales() < sales);
+        musicBands.removeIf(mb -> mb.getUser().id() == userId && mb.getBestAlbum().sales() < sales);
         if (builder.toString().isEmpty()) {
             return ALL_ELEMENT_BIGGER;
         }
@@ -115,12 +122,11 @@ public class CashManager {
         StringBuilder builder = new StringBuilder();
         musicBands.stream()
                 .sorted(MusicBand::compareTo)
-                .forEach(mb -> builder.append("owner = ").append(mb.getUser().getLogin()).append(", sales = ").append(mb.getBestAlbum().sales()).append('\n'));
+                .forEach(mb -> builder.append("owner = ").append(mb.getUser().login()).append(", sales = ").append(mb.getBestAlbum().sales()).append('\n'));
         return builder.toString();
     }
 
     public void initBands(Set<MusicBand> anotherBand) {
         musicBands = anotherBand;
     }
-
 }

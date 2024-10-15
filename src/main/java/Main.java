@@ -2,9 +2,9 @@ import dao.DatabaseConnector;
 import dao.MusicBandDAO;
 import dao.UserDAO;
 import logger.LoggerConfigurator;
-import manager.CashManager;
-import manager.ManagerDAO;
-import manager.Manager;
+import manager.CacheManager;
+import manager.LoginAndRegisterManager;
+import manager.MusicBandManager;
 import music.MusicBand;
 import server.RequestHandler;
 import server.Server;
@@ -33,13 +33,12 @@ public class Main {
 
     private static Server getServer(DatabaseConnector connector) throws IOException, SQLException {
         HashSet<MusicBand> musicBands = new HashSet<>();
-        CashManager cashManager = new CashManager(musicBands);
+        CacheManager cacheManager = new CacheManager(musicBands);
         UserDAO userDAO = new UserDAO(connector);
         MusicBandDAO musicBandDAO = new MusicBandDAO(connector);
-        ManagerDAO managerDAO = new ManagerDAO(musicBandDAO, userDAO);
-        Manager manager = new Manager(cashManager, managerDAO);
-        manager.readBands();
-        RequestHandler requestHandler = new RequestHandler(manager);
+        LoginAndRegisterManager loginAndRegisterManager = new LoginAndRegisterManager(userDAO);
+        MusicBandManager musicBandManager = new MusicBandManager(cacheManager, musicBandDAO);
+        RequestHandler requestHandler = new RequestHandler(musicBandManager, loginAndRegisterManager);
         return new Server(requestHandler, "localhost", 8888);
     }
 }

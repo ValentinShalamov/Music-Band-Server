@@ -1,8 +1,8 @@
 package dao;
 
-import command.CommandDeserializer;
 import exceptions.DatabaseValidationException;
 import exceptions.MusicBandExistsException;
+import logger.LoggerConfigurator;
 import music.BestAlbum;
 import music.MusicBand;
 import music.MusicGenre;
@@ -13,10 +13,16 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+import static messages.ExceptionsDAOMessages.AFTER_ROLLBACK;
+import static messages.ExceptionsDAOMessages.BEFORE_ROLLBACK;
 
 public class MusicBandDAO {
-    public DatabaseConnector connector;
-    public Connection connection;
+    private final DatabaseConnector connector;
+    private final Connection connection;
+    private static final Logger logger = LoggerConfigurator.createDefaultLogger(MusicBandDAO.class.getName());
 
     public MusicBandDAO(DatabaseConnector connector) {
         this.connector = connector;
@@ -24,28 +30,34 @@ public class MusicBandDAO {
     }
 
     public MusicBand insertBandAndSelect(MusicBand musicBand, User user) throws SQLException, MusicBandExistsException {
-        checkBandByName(musicBand.getName());
         try {
             connection.setAutoCommit(false);
-            String sql = "INSERT INTO music_bands (name, genre, number_participants, creation_date," +
-                    " establishment_date, best_album_name, best_album_sales, owner_id)" +
-                    " VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
-            try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-                preparedStatement.setString(1, musicBand.getName());
-                preparedStatement.setString(2, musicBand.getGenre().toString());
-                preparedStatement.setInt(3, musicBand.getNumberOfParticipants());
-                preparedStatement.setString(4, musicBand.getCreationDate().toString());
-                preparedStatement.setDate(5, Date.valueOf(musicBand.getEstablishmentDate()));
-                preparedStatement.setString(6, musicBand.getBestAlbum().name());
-                preparedStatement.setLong(7, musicBand.getBestAlbum().sales());
-                preparedStatement.setInt(8, user.getId());
+            if (isNameBusy(musicBand.getName())) {
+                throw new MusicBandExistsException();
+            }
+            final String insertSql = """
+                    INSERT INTO music_bands (name, genre, number_participants, creation_date,
+                    establishment_date, best_album_name, best_album_sales, owner_id)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)""";
+
+            try (PreparedStatement preparedStatement = connection.prepareStatement(insertSql)) {
+                int argCount = 0;
+                preparedStatement.setString(++argCount, musicBand.getName());
+                preparedStatement.setString(++argCount, musicBand.getGenre().toString());
+                preparedStatement.setInt(++argCount, musicBand.getNumberOfParticipants());
+                preparedStatement.setString(++argCount, musicBand.getCreationDate().toString());
+                preparedStatement.setDate(++argCount, Date.valueOf(musicBand.getEstablishmentDate()));
+                preparedStatement.setString(++argCount, musicBand.getBestAlbum().name());
+                preparedStatement.setLong(++argCount, musicBand.getBestAlbum().sales());
+                preparedStatement.setInt(++argCount, user.id());
 
                 preparedStatement.executeUpdate();
             }
 
-            sql = "SELECT band_id FROM music_bands WHERE name = ?";
-            try (PreparedStatement secondPreparedStatement = connection.prepareStatement(sql)) {
-                secondPreparedStatement.setString(1, musicBand.getName());
+            final String selectSql = "SELECT band_id FROM music_bands WHERE name = ?";
+            try (PreparedStatement secondPreparedStatement = connection.prepareStatement(selectSql)) {
+                int argCount = 0;
+                secondPreparedStatement.setString(++argCount, musicBand.getName());
 
                 ResultSet resultSet = secondPreparedStatement.executeQuery();
                 resultSet.next();
@@ -53,71 +65,96 @@ public class MusicBandDAO {
                 musicBand.setId(id);
             }
             connection.commit();
-            connection.setAutoCommit(true);
             musicBand.setUser(user);
             return musicBand;
         } catch (SQLException e) {
-            connection.rollback();
-            throw new SQLException(e);
+            logger.log(Level.SEVERE, BEFORE_ROLLBACK, e.getMessage());
+            try {
+                connection.rollback();
+            } catch (SQLException ex) {
+                logger.log(Level.SEVERE, AFTER_ROLLBACK, e.getMessage());
+                throw ex;
+            }
+            throw e;
+        } finally {
+            connection.setAutoCommit(true);
         }
     }
 
-    private void checkBandByName(String name) throws SQLException, MusicBandExistsException {
-        String sql = "SELECT name FROM music_bands WHERE name = ?";
+    private boolean isNameBusy(String name) throws SQLException, MusicBandExistsException {
+        final String sql = "SELECT name FROM music_bands WHERE name = ?";
         try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-            preparedStatement.setString(1, name);
+            int argCount = 0;
+            preparedStatement.setString(++argCount, name);
             ResultSet resultSet = preparedStatement.executeQuery();
-            if (resultSet.next()) {
-                throw new MusicBandExistsException();
-            }
+            return resultSet.next();
+        } catch (SQLException e) {
+            logger.log(Level.SEVERE, e.getMessage());
+            throw e;
         }
     }
 
     public boolean updateById(MusicBand musicBand, long id, User user) throws SQLException {
-        String sql = "UPDATE music_bands" +
-                " SET name = ?, genre = ?, number_participants = ?, creation_date = ?," +
-                " establishment_date = ?, best_album_name = ?, best_album_sales = ?" +
-                " WHERE band_id = ? AND owner_id = ?";
+        final String sql = """
+                UPDATE music_bands
+                SET name = ?, genre = ?, number_participants = ?,
+                creation_date = ?, establishment_date = ?,
+                best_album_name = ?, best_album_sales = ?
+                WHERE band_id = ? AND owner_id = ?""";
+
         try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-            preparedStatement.setString(1, musicBand.getName());
-            preparedStatement.setString(2, musicBand.getGenre().toString());
-            preparedStatement.setInt(3, musicBand.getNumberOfParticipants());
-            preparedStatement.setString(4, musicBand.getCreationDate().toString());
-            preparedStatement.setDate(5, Date.valueOf(musicBand.getEstablishmentDate()));
-            preparedStatement.setString(6, musicBand.getBestAlbum().name());
-            preparedStatement.setLong(7, musicBand.getBestAlbum().sales());
-            preparedStatement.setLong(8, id);
-            preparedStatement.setInt(9, user.getId());
+            int argCount = 0;
+            preparedStatement.setString(++argCount, musicBand.getName());
+            preparedStatement.setString(++argCount, musicBand.getGenre().toString());
+            preparedStatement.setInt(++argCount, musicBand.getNumberOfParticipants());
+            preparedStatement.setString(++argCount, musicBand.getCreationDate().toString());
+            preparedStatement.setDate(++argCount, Date.valueOf(musicBand.getEstablishmentDate()));
+            preparedStatement.setString(++argCount, musicBand.getBestAlbum().name());
+            preparedStatement.setLong(++argCount, musicBand.getBestAlbum().sales());
+            preparedStatement.setLong(++argCount, id);
+            preparedStatement.setInt(++argCount, user.id());
 
             return preparedStatement.executeUpdate() != 0;
+        } catch (SQLException e) {
+            logger.log(Level.SEVERE, e.getMessage());
+            throw e;
         }
     }
 
     public boolean removeById(long id, User user) throws SQLException {
-        String sql = "DELETE FROM music_bands WHERE band_id = ? AND owner_id = ?";
+        final String sql = "DELETE FROM music_bands WHERE band_id = ? AND owner_id = ?";
         try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-            preparedStatement.setLong(1, id);
-            preparedStatement.setInt(2, user.getId());
+            int argCount = 0;
+            preparedStatement.setLong(++argCount, id);
+            preparedStatement.setInt(++argCount, user.id());
 
             return preparedStatement.executeUpdate() != 0;
+        } catch (SQLException e) {
+            logger.log(Level.SEVERE, e.getMessage());
+            throw e;
         }
     }
 
     public boolean clear(User user) throws SQLException {
-        String sql = "DELETE FROM music_bands WHERE owner_id = ?";
+        final String sql = "DELETE FROM music_bands WHERE owner_id = ?";
         try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-            preparedStatement.setInt(1, user.getId());
+            int argCount = 0;
+            preparedStatement.setInt(++argCount, user.id());
 
             return preparedStatement.executeUpdate() != 0;
+        } catch (SQLException e) {
+            logger.log(Level.SEVERE, e.getMessage());
+            throw e;
         }
     }
 
     public MusicBand insertIfSalesMin(MusicBand musicBand, User user) throws SQLException, MusicBandExistsException, DatabaseValidationException {
-        checkBandByName(musicBand.getName());
-        String sql = "SELECT * FROM music_bands WHERE best_album_sales < ? AND owner_id = ?";
+        final String sql = "SELECT * FROM music_bands WHERE best_album_sales < ? AND owner_id = ?";
+        connection.setAutoCommit(false);
         try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-            preparedStatement.setLong(1, musicBand.getBestAlbum().sales());
-            preparedStatement.setInt(2, user.getId());
+            int argCount = 0;
+            preparedStatement.setLong(++argCount, musicBand.getBestAlbum().sales());
+            preparedStatement.setInt(++argCount, user.id());
 
             ResultSet resultSet = preparedStatement.executeQuery();
             if (!resultSet.next()) {
@@ -125,44 +162,57 @@ public class MusicBandDAO {
             } else {
                 throw new DatabaseValidationException();
             }
+        } catch (SQLException e) {
+            logger.log(Level.SEVERE, e.getMessage());
+            throw e;
+        } finally {
+            connection.setAutoCommit(true);
         }
     }
 
     public void removeLower(long sales, User user) throws SQLException {
-        String sql = "DELETE FROM music_bands WHERE best_album_sales < ? AND owner_id = ?";
+        final String sql = "DELETE FROM music_bands WHERE best_album_sales < ? AND owner_id = ?";
         try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-            preparedStatement.setLong(1, sales);
-            preparedStatement.setInt(2, user.getId());
+            int argCount = 0;
+            preparedStatement.setLong(++argCount, sales);
+            preparedStatement.setInt(++argCount, user.id());
 
             preparedStatement.executeUpdate();
+        } catch (SQLException e) {
+            logger.log(Level.SEVERE, e.getMessage());
+            throw e;
         }
     }
 
     public Set<MusicBand> readMusicBands() throws SQLException {
-        CommandDeserializer commandDeserializer = new CommandDeserializer();
         Set<MusicBand> musicBands = new HashSet<>();
-        String sql = "SELECT music_bands.*, login, pass FROM music_bands JOIN owners ON music_bands.owner_id = owners.owner_id";
+        final String sql = "SELECT music_bands.*, login, pass FROM music_bands JOIN owners ON music_bands.owner_id = owners.owner_id";
         try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             ResultSet resultSet = preparedStatement.executeQuery();
 
             while (resultSet.next()) {
-                long id = resultSet.getLong(1);
-                String name = resultSet.getString(2);
-                MusicGenre genre = MusicGenre.valueOf(resultSet.getString(3));
-                int numberParticipants = resultSet.getInt(4);
-                LocalDateTime creationDate = commandDeserializer.readLocalDateTime(resultSet.getString(5));
-                LocalDate establishmentDate = commandDeserializer.readLocalDate(resultSet.getDate(6).toString());
-                String bestAlbumName = resultSet.getString(7);
-                long bestAlbumSales = resultSet.getLong(8);
-                int ownerId = resultSet.getInt(9);
-                String login = resultSet.getString(10);
+                int argCount = 0;
+                long id = resultSet.getLong(++argCount);
+                String name = resultSet.getString(++argCount);
+                MusicGenre genre = MusicGenre.valueOf(resultSet.getString(++argCount));
+                int numberParticipants = resultSet.getInt(++argCount);
+                LocalDateTime creationDate = LocalDateTime.parse(resultSet.getString(++argCount));
+                LocalDate establishmentDate = LocalDate.parse(resultSet.getDate(++argCount).toString());
+                String bestAlbumName = resultSet.getString(++argCount);
+                long bestAlbumSales = resultSet.getLong(++argCount);
+                int ownerId = resultSet.getInt(++argCount);
+                String login = resultSet.getString(++argCount);
+                String pass = resultSet.getString(++argCount);
 
                 MusicBand musicBand = new MusicBand(id, name, genre, numberParticipants,
                         creationDate, establishmentDate, new BestAlbum(bestAlbumName, bestAlbumSales),
-                        new User(ownerId, login));
+                        new User(ownerId, login, pass));
                 musicBands.add(musicBand);
             }
             return musicBands;
+        } catch (SQLException e) {
+            logger.log(Level.SEVERE, e.getMessage());
+            throw e;
         }
     }
 }

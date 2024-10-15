@@ -81,7 +81,7 @@ public class MusicBand implements Comparable<MusicBand> {
                 "genre is %s, the best album is %s, count sales of the best album = %d, " +
                         "user is %s \n",
                 id, name, creationDate.toLocalTime().format(DateTimeFormatter.ofPattern("HH:mm")), numberOfParticipants, establishmentDate, genre,
-                bestAlbum.name(), bestAlbum.sales(), user.getLogin());
+                bestAlbum.name(), bestAlbum.sales(), user.login());
     }
 
     @Override

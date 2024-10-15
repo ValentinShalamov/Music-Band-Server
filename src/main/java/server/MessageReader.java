@@ -3,20 +3,20 @@ package server;
 import exceptions.ClientDisconnectedException;
 import exceptions.NotFullMessageException;
 import exceptions.UnsupportedClientException;
+import logger.LoggerConfigurator;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class MessageReader {
     private final HashMap<SocketChannel, MessageReadingContext> clientInfoMap = new HashMap<>();
-    private final int LIMIT_MESSAGE_LENGTH = 1024;
-
-    public MessageReadingContext getMessageReadingContext(SocketChannel socketChannel) {
-        return clientInfoMap.get(socketChannel);
-    }
+    private static final int LIMIT_MESSAGE_LENGTH = 1024;
+    private static final Logger logger = LoggerConfigurator.createDefaultLogger(MessageReader.class.getName());
 
     public String getFullMessage(SocketChannel client) {
         try {
@@ -80,12 +80,13 @@ public class MessageReader {
                 }
             }
         } catch (IOException e) {
-            System.out.println(e.getMessage());
+            logger.log(Level.SEVERE, e.getMessage());
+            clientInfoMap.remove(client);
+            throw new UnsupportedClientException();
         } catch (IllegalArgumentException e) {
             clientInfoMap.remove(client);
             throw new UnsupportedClientException();
         }
-        return null;
     }
 
     public void deleteClient(SocketChannel client) {

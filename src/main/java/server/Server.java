@@ -8,7 +8,10 @@ import logger.LoggerConfigurator;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
-import java.nio.channels.*;
+import java.nio.channels.SelectionKey;
+import java.nio.channels.Selector;
+import java.nio.channels.ServerSocketChannel;
+import java.nio.channels.SocketChannel;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Iterator;
@@ -24,7 +27,7 @@ public class Server {
     private final Selector selector;
     private final RequestHandler requestHandler;
     private final MessageReader messageReader;
-
+    private final CurrentUsers currentUsers;
     private static final Logger logger = LoggerConfigurator.createDefaultLogger(Server.class.getName());
 
     public Server(RequestHandler requestHandler, String address, int port) throws IOException {
@@ -35,6 +38,7 @@ public class Server {
         this.serverSocketChannel.register(selector, SelectionKey.OP_ACCEPT);
         this.requestHandler = requestHandler;
         this.messageReader = new MessageReader();
+        this.currentUsers = new CurrentUsers();
     }
 
     public void start() {
@@ -78,9 +82,11 @@ public class Server {
         try {
             client.configureBlocking(false);
             client.register(selector, SelectionKey.OP_READ);
+            currentUsers.addClient(client);
             logger.info(NEW_CLIENT_CONNECTED + client.getRemoteAddress() + "\n");
             client.write(getMessageForSend(requestHandler.readGreetMessage()));
         } catch (IOException e) {
+            currentUsers.deleteClient(client);
             client.close();
             logger.info(CONNECTION_CLOSED);
             logger.log(Level.SEVERE, CHANNEL_FAILURE, e);
@@ -98,18 +104,20 @@ public class Server {
             } catch (NotFullMessageException e) {
                 return;
             } catch (ClientDisconnectedException e) {
+                currentUsers.deleteClient(client);
                 client.close();
                 logger.info(CONNECTION_CLOSED);
                 logger.info(CLIENT_HAS_DISCONNECTED);
                 return;
             } catch (UnsupportedClientException e) {
+                currentUsers.deleteClient(client);
                 logger.info(UNSUPPORTED_CLIENT);
                 client.close();
                 logger.info(CONNECTION_CLOSED);
                 return;
             }
 
-            MessageReadingContext context = messageReader.getMessageReadingContext(client);
+            UserContext context = currentUsers.getUserContext(client);
             logger.info(PROCESSING_REQUEST);
             String result = requestHandler.getHandleRequestResult(request, context);
             logger.log(Level.WARNING, result);
@@ -119,6 +127,7 @@ public class Server {
                 logger.info(SENDING_ANSWER_TO_CLIENT);
                 messageReader.deleteClient(client);
                 logger.info(DELETING_SUCCESSFUL);
+                currentUsers.deleteClient(client);
                 client.close();
                 logger.info(CONNECTION_CLOSED);
                 return;
@@ -129,6 +138,7 @@ public class Server {
         } catch (IOException e) {
             logger.info(UNSUPPORTED_CLIENT);
             messageReader.deleteClient(client);
+            currentUsers.deleteClient(client);
             logger.info(DELETING_SUCCESSFUL);
             client.close();
             logger.info(CONNECTION_CLOSED);
