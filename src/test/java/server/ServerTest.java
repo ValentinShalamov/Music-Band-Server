@@ -43,8 +43,8 @@ public class ServerTest {
     @Test
     void test() throws IOException {
 
-        Mockito.when(requestHandler.readEnvironment()).thenReturn("read environment");
-        Mockito.when(requestHandler.getHandleRequestResult(Mockito.anyString())).thenReturn("good");
+        Mockito.when(requestHandler.readGreetMessage()).thenReturn("read environment");
+        Mockito.when(requestHandler.getHandleRequestResult(Mockito.anyString(), Mockito.any(UserContext.class))).thenReturn("good");
         ArgumentCaptor<String> captor = ArgumentCaptor.forClass(String.class);
 
         connectFirstClient();
@@ -60,13 +60,13 @@ public class ServerTest {
         sendSecondHalfRequestForFirstClient("clear");
         String messageFirst = readMessageForFirstClient();
         Assertions.assertEquals("good", messageFirst);
-        Mockito.verify(requestHandler).getHandleRequestResult(captor.capture());
+        Mockito.verify(requestHandler).getHandleRequestResult(captor.capture(),Mockito.any(UserContext.class));
         Assertions.assertEquals("clear", captor.getValue());
 
         sendSecondHalfRequestForSecondClientByOneByte("info");
         String messageSecond = readMessageForSecondClient();
         Assertions.assertEquals("good", messageSecond);
-        Mockito.verify(requestHandler, Mockito.times(2)).getHandleRequestResult(captor.capture());
+        Mockito.verify(requestHandler, Mockito.times(2)).getHandleRequestResult(captor.capture(), Mockito.any(UserContext.class));
         Assertions.assertEquals("info", captor.getValue());
 
 
