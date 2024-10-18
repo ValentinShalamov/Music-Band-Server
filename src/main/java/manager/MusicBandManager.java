@@ -24,7 +24,7 @@ public class MusicBandManager {
     public MusicBandManager(CacheManager cacheManager, MusicBandDAO musicBandDAO) throws SQLException {
         this.cacheManager = cacheManager;
         this.musicBandDAO = musicBandDAO;
-        initCache();
+        warmupCache();
     }
 
     public String help(User user) {
@@ -169,7 +169,7 @@ public class MusicBandManager {
         history.putIfAbsent(user.login(), new ArrayDeque<>());
     }
 
-    private void initCache() throws SQLException {
+    private void warmupCache() throws SQLException {
         cacheManager.initBands(musicBandDAO.readMusicBands());
     }
 
