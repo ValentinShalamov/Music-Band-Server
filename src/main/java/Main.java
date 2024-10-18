@@ -39,6 +39,6 @@ public class Main {
         LoginAndRegisterManager loginAndRegisterManager = new LoginAndRegisterManager(userDAO);
         MusicBandManager musicBandManager = new MusicBandManager(cacheManager, musicBandDAO);
         RequestHandler requestHandler = new RequestHandler(musicBandManager, loginAndRegisterManager);
-        return new Server(requestHandler, "localhost", 8888);
+        return new Server(requestHandler, "193.124.115.131", 8888);
     }
 }
