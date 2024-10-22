@@ -1,4 +1,4 @@
-package server;
+package handler;
 
 import com.google.gson.JsonSyntaxException;
 import command.Command;
@@ -8,6 +8,7 @@ import exceptions.NoSuchUserException;
 import logger.LoggerConfigurator;
 import manager.LoginAndRegisterManager;
 import manager.MusicBandManager;
+
 import user.User;
 
 import java.sql.SQLException;
@@ -25,6 +26,7 @@ public class RequestHandler {
     private final MusicBandManager musicBandManager;
     private final CommandDeserializer deserializer;
     private final LoginAndRegisterManager loginAndRegisterManager;
+
     private static final Logger logger = LoggerConfigurator.createDefaultLogger(RequestHandler.class.getName());
 
     public RequestHandler(MusicBandManager musicBandManager, LoginAndRegisterManager loginAndRegisterManager) {
@@ -49,7 +51,7 @@ public class RequestHandler {
 
     private String logIn(String login, String pass, UserContext context) {
         try {
-            User user = loginAndRegisterManager.getUser(login,pass);
+            User user = loginAndRegisterManager.getUser(login, pass);
             context.setUser(user);
             musicBandManager.initCommandHistory(user);
             return AUTHORIZATION_SUCCESSFUL;

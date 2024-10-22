@@ -16,17 +16,16 @@ import static messages.ExceptionsDAOMessages.BEFORE_ROLLBACK;
 
 public class UserDAO {
     private final DatabaseConnector connector;
-    private final Connection connection;
     private static final Logger logger = LoggerConfigurator.createDefaultLogger(UserDAO.class.getName());
 
     public UserDAO(DatabaseConnector connector) {
         this.connector = connector;
-        this.connection = connector.getConnection();
     }
 
     public User selectUserByLogin(String login) throws SQLException {
         String sql = "SELECT * FROM owners WHERE login = ?";
-        try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+        try (Connection connection = connector.getConnection();
+             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             int argCount = 0;
             preparedStatement.setString(++argCount, login);
 
@@ -47,7 +46,8 @@ public class UserDAO {
 
     private boolean isLoginBusy(String login) throws SQLException {
         String sql = "SELECT * FROM owners WHERE login = ?";
-        try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+        try (Connection connection = connector.getConnection();
+             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             preparedStatement.setString(1, login);
 
             ResultSet resultSet = preparedStatement.executeQuery();
@@ -60,32 +60,34 @@ public class UserDAO {
     }
 
     public boolean regUser(String login, String encodePass) throws SQLException {
-        try {
-            connection.setAutoCommit(false);
-            if (!isLoginBusy(login)) {
-                String sql = "INSERT INTO owners (login, pass) VALUES (?, ?)";
-                try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-                    preparedStatement.setString(1, login);
-                    preparedStatement.setString(2, encodePass);
-
-                    return preparedStatement.executeUpdate() != 0;
-                }
-            } else {
-                return false;
-            }
-        } catch (SQLException e) {
-            String messageBefore = String.format(BEFORE_ROLLBACK + "Login: %s, Exception: %s", login, e.getMessage());
-            logger.log(Level.SEVERE, messageBefore);
+        try (Connection connection = connector.getConnection()) {
             try {
-                connection.rollback();
-            } catch (SQLException ex) {
-                String messageAfter = String.format(AFTER_ROLLBACK + "Login: %s, Exception: %s", login, e.getMessage());
-                logger.log(Level.SEVERE, messageAfter);
-                throw ex;
+                connection.setAutoCommit(false);
+                if (!isLoginBusy(login)) {
+                    String sql = "INSERT INTO owners (login, pass) VALUES (?, ?)";
+                    try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+                        preparedStatement.setString(1, login);
+                        preparedStatement.setString(2, encodePass);
+
+                        return preparedStatement.executeUpdate() != 0;
+                    }
+                } else {
+                    return false;
+                }
+            } catch (SQLException e) {
+                String messageBefore = String.format(BEFORE_ROLLBACK + "Login: %s, Exception: %s", login, e.getMessage());
+                logger.log(Level.SEVERE, messageBefore);
+                try {
+                    connection.rollback();
+                } catch (SQLException ex) {
+                    String messageAfter = String.format(AFTER_ROLLBACK + "Login: %s, Exception: %s", login, e.getMessage());
+                    logger.log(Level.SEVERE, messageAfter);
+                    throw ex;
+                }
+                throw e;
+            } finally {
+                connection.setAutoCommit(true);
             }
-            throw e;
-        } finally {
-            connection.setAutoCommit(true);
         }
     }
 }

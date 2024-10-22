@@ -11,6 +11,8 @@ import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import static messages.ErrorMessages.SQL_EXCEPTION;
 import static messages.HistoryMessages.*;
@@ -20,6 +22,7 @@ public class MusicBandManager {
     private final CacheManager cacheManager;
     private final MusicBandDAO musicBandDAO;
     private final Map<String, Deque<String>> history = new HashMap<>();
+    private final ReadWriteLock historyLock = new ReentrantReadWriteLock();
 
     public MusicBandManager(CacheManager cacheManager, MusicBandDAO musicBandDAO) throws SQLException {
         this.cacheManager = cacheManager;
@@ -29,7 +32,7 @@ public class MusicBandManager {
 
     public String help(User user) {
         addHistory(HELP_HISTORY, user);
-        return cacheManager.help();
+        return LIST_OF_AVAILABLE_COMMAND;
     }
 
     public String info(User user) {
@@ -105,25 +108,35 @@ public class MusicBandManager {
 
     public String history(User user) {
         String login = user.login();
-        if (history.get(login).isEmpty()) {
-            return HISTORY_IS_EMPTY;
+        historyLock.readLock().lock();
+        try {
+            if (history.get(login).isEmpty()) {
+                return HISTORY_IS_EMPTY;
+            }
+            StringBuilder builder = new StringBuilder();
+            String firstCommand = history.get(login).getFirst();
+            builder.append(firstCommand).delete(firstCommand.length() - 2, firstCommand.length()).append(" - last command \n");
+            history.get(login).stream()
+                    .skip(1)
+                    .forEach(builder::append);
+            return builder.toString();
+        } finally {
+            historyLock.readLock().unlock();
         }
-        StringBuilder builder = new StringBuilder();
-        String firstCommand = history.get(login).getFirst();
-        builder.append(firstCommand).delete(firstCommand.length() - 2, firstCommand.length()).append(" - last command \n");
-        history.get(login).stream()
-                .skip(1)
-                .forEach(builder::append);
-        return builder.toString();
     }
 
     public String clearHistory(User user) {
         String login = user.login();
-        if (history.get(login).isEmpty()) {
-            return HISTORY_IS_EMPTY;
+        historyLock.readLock().lock();
+        try {
+            if (history.get(login).isEmpty()) {
+                return HISTORY_IS_EMPTY;
+            }
+            history.get(user.login()).clear();
+            return HISTORY_CLEARED;
+        } finally {
+            historyLock.readLock().unlock();
         }
-        history.get(user.login()).clear();
-        return HISTORY_CLEARED;
     }
 
     public String addIfMin(MusicBand musicBand, User user) {
@@ -166,7 +179,12 @@ public class MusicBandManager {
     }
 
     public void initCommandHistory(User user) {
-        history.putIfAbsent(user.login(), new ArrayDeque<>());
+        historyLock.writeLock().lock();
+        try {
+            history.putIfAbsent(user.login(), new ArrayDeque<>());
+        } finally {
+            historyLock.writeLock().unlock();
+        }
     }
 
     private void warmupCache() throws SQLException {
@@ -174,10 +192,15 @@ public class MusicBandManager {
     }
 
     private void addHistory(String commandName, User user) {
-        Deque<String> commandHistory = history.get(user.login());
-        commandHistory.addFirst(commandName);
-        if (commandHistory.size() > 12) {
-            commandHistory.removeLast();
+        historyLock.readLock().lock();
+        try {
+            Deque<String> commandHistory = history.get(user.login());
+            commandHistory.addFirst(commandName);
+            if (commandHistory.size() > 12) {
+                commandHistory.removeLast();
+            }
+        } finally {
+            historyLock.readLock().unlock();
         }
     }
 }

@@ -1,4 +1,4 @@
-package server;
+package handler;
 
 import exceptions.ClientDisconnectedException;
 import exceptions.NotFullMessageException;
@@ -42,9 +42,8 @@ public class MessageReader {
                     if (buffer.remaining() == 0) {
                         byte[] bytes = buffer.array();
                         buffer.get(bytes, 0, 0);
-                        messageReadingContext.setNewBufferWithLength(4);
-                        messageReadingContext.setReadyMessageBuffer(false);
-                        return new String(buffer.array(), StandardCharsets.UTF_8);
+                        clientInfoMap.remove(client);
+                        return new String(bytes, StandardCharsets.UTF_8);
                     } else {
                         throw new NotFullMessageException();
                     }
@@ -71,8 +70,7 @@ public class MessageReader {
                     if (buffer.remaining() == 0) {
                         byte[] bytes = buffer.array();
                         buffer.get(bytes, 0, 0);
-                        messageReadingContext.setNewBufferWithLength(4);
-                        messageReadingContext.setReadyMessageBuffer(false);
+                        clientInfoMap.remove(client);
                         return new String(bytes, StandardCharsets.UTF_8);
                     } else {
                         throw new NotFullMessageException();
@@ -87,10 +85,6 @@ public class MessageReader {
             clientInfoMap.remove(client);
             throw new UnsupportedClientException();
         }
-    }
-
-    public void deleteClient(SocketChannel client) {
-        clientInfoMap.remove(client);
     }
 
     private void checkClientConnection(SocketChannel client, int read) {

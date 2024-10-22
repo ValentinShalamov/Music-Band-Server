@@ -6,7 +6,7 @@ import manager.CacheManager;
 import manager.LoginAndRegisterManager;
 import manager.MusicBandManager;
 import music.MusicBand;
-import server.RequestHandler;
+import handler.RequestHandler;
 import server.Server;
 
 import java.io.IOException;
@@ -23,8 +23,8 @@ public class Main {
 
         Logger logger = LoggerConfigurator.createDefaultLogger(Main.class.getName());
 
-        try (DatabaseConnector connector = new DatabaseConnector(url, user, pass)) {
-            Server server = getServer(connector);
+        try (DatabaseConnector connector = new DatabaseConnector(url, user, pass);
+             Server server = getServer(connector)) {
             server.start();
         } catch (Exception e) {
             logger.log(Level.SEVERE, e.getMessage(), e);
@@ -39,6 +39,6 @@ public class Main {
         LoginAndRegisterManager loginAndRegisterManager = new LoginAndRegisterManager(userDAO);
         MusicBandManager musicBandManager = new MusicBandManager(cacheManager, musicBandDAO);
         RequestHandler requestHandler = new RequestHandler(musicBandManager, loginAndRegisterManager);
-        return new Server(requestHandler, "193.124.115.131", 8888);
+        return new Server(requestHandler, "localhost", 8888);
     }
 }
