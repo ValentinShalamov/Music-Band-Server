@@ -17,6 +17,7 @@ public class DatabaseConnector implements AutoCloseable {
         this.dataSource.setDefaultAutoCommit(true);
         this.dataSource.setMinIdle(5); // minimum number of connection objects that have kept alive in the pool
         this.dataSource.setMaxIdle(10); // maximum number of connection objects that have kept alive in the pool
+        this.dataSource.setPoolPreparedStatements(true);
         this.dataSource.setMaxOpenPreparedStatements(100);
     }
 

@@ -5,9 +5,9 @@ import exceptions.NotFullMessageException;
 import exceptions.ServerCloseException;
 import exceptions.UnsupportedClientException;
 import handler.MessageReader;
-import handler.RequestHandler;
 import handler.UserContext;
 import logger.LoggerConfigurator;
+import multithreading.MultithreadedRequestHandler;
 import response.Response;
 
 import java.io.IOException;
@@ -20,38 +20,42 @@ import java.nio.channels.SocketChannel;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.*;
+import java.util.concurrent.BlockingQueue;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static messages.ErrorMessages.*;
 import static messages.ServerMessages.*;
+import static messages.UserMessages.GREET_MESSAGE;
 
 public class Server implements AutoCloseable {
     private final ServerSocketChannel serverSocketChannel;
     private final Selector selector;
-    private final RequestHandler requestHandler;
     private final MessageReader messageReader;
-    private final CurrentUsers currentUsers;
     private final CurrentRequests currentRequests;
-    private final ExecutorService handleService;
     private final BlockingQueue<Response> responses;
+    private final MultithreadedRequestHandler multithreadedRequestHandler;
+    private final Map<SocketChannel, UserContext> currentUsers;
+
     private static final Logger logger = LoggerConfigurator.createDefaultLogger(Server.class.getName());
 
+    public Server(MultithreadedRequestHandler multithreadedRequestHandler, BlockingQueue<Response> blockingQueue,
+                  MessageReader messageReader, Map<SocketChannel, UserContext> currentUsers,
+                  String address, int port) throws IOException {
 
-    public Server(RequestHandler requestHandler, String address, int port) throws IOException {
         this.serverSocketChannel = ServerSocketChannel.open();
         this.serverSocketChannel.socket().bind(new InetSocketAddress(address, port));
         this.serverSocketChannel.configureBlocking(false);
         this.selector = Selector.open();
         this.serverSocketChannel.register(selector, SelectionKey.OP_ACCEPT);
-        this.requestHandler = requestHandler;
-        this.messageReader = new MessageReader();
-        this.currentUsers = new CurrentUsers();
+        this.messageReader = messageReader;
+        this.currentUsers = currentUsers;
         this.currentRequests = new CurrentRequests();
-        this.responses = new ArrayBlockingQueue<>(100);
-        this.handleService = Executors.newFixedThreadPool(10);
+        this.responses = blockingQueue;
+
+        this.multithreadedRequestHandler = multithreadedRequestHandler;
         initSender();
     }
 
@@ -67,7 +71,7 @@ public class Server implements AutoCloseable {
                     client.write(getMessageForSend(result));
                     logger.info(SENDING_ANSWER_TO_CLIENT);
                     if (result.equals(DESERIALIZATION_ERROR)) {
-                        currentUsers.deleteClient(client);
+                        currentUsers.remove(client);
                         logger.info(DELETING_SUCCESSFUL);
                         client.close();
                         logger.info(CONNECTION_CLOSED);
@@ -124,17 +128,17 @@ public class Server implements AutoCloseable {
         try {
             client.configureBlocking(false);
             client.register(selector, SelectionKey.OP_READ);
-            currentUsers.addClient(client);
+            currentUsers.putIfAbsent(client, new UserContext());
             logger.info(NEW_CLIENT_CONNECTED + client.getRemoteAddress() + "\n");
             int requestId = currentRequests.getRequestId(client);
-            responses.put(new Response(requestId, requestHandler.readGreetMessage()));
+            responses.put(new Response(requestId, GREET_MESSAGE));
         } catch (IOException e) {
-            currentUsers.deleteClient(client);
+            currentUsers.remove(client);
             client.close();
             logger.info(CONNECTION_CLOSED);
             logger.log(Level.SEVERE, CHANNEL_FAILURE, e);
         } catch (InterruptedException e) {
-            currentUsers.deleteClient(client);
+            currentUsers.remove(client);
             client.close();
             logger.info(CONNECTION_CLOSED);
             String message = String.format("Thread name: %s, message: %s", Thread.currentThread().getName(), BLOCK_QUEUE_PUT_ERROR);
@@ -152,34 +156,24 @@ public class Server implements AutoCloseable {
             } catch (NotFullMessageException e) {
                 return;
             } catch (ClientDisconnectedException e) {
-                currentUsers.deleteClient(client);
+                currentUsers.remove(client);
                 client.close();
                 logger.info(CONNECTION_CLOSED);
                 logger.info(CLIENT_HAS_DISCONNECTED);
                 return;
             } catch (UnsupportedClientException e) {
-                currentUsers.deleteClient(client);
+                currentUsers.remove(client);
                 logger.info(UNSUPPORTED_CLIENT);
                 client.close();
                 logger.info(CONNECTION_CLOSED);
                 return;
             }
 
-            handleService.execute(() -> {
-                int requestId = currentRequests.getRequestId(client);
-                UserContext context = currentUsers.getUserContext(client);
-                logger.info(PROCESSING_REQUEST);
-                String result = requestHandler.getHandleRequestResult(request, context);
-                try {
-                    responses.put(new Response(requestId, result));
-                } catch (InterruptedException e) {
-                    String message = String.format("Thread name: %s, message: %s", Thread.currentThread().getName(), BLOCK_QUEUE_PUT_ERROR);
-                    logger.log(Level.SEVERE, message, e);
-                }
-            });
+            multithreadedRequestHandler.execute(currentRequests.getRequestId(client), request, currentUsers.get(client));
+
         } catch (IOException e) {
             logger.info(UNSUPPORTED_CLIENT);
-            currentUsers.deleteClient(client);
+            currentUsers.remove(client);
             logger.info(DELETING_SUCCESSFUL);
             client.close();
             logger.info(CONNECTION_CLOSED);
@@ -189,7 +183,6 @@ public class Server implements AutoCloseable {
 
     @Override
     public void close() throws Exception {
-        handleService.shutdown();
         try {
             serverSocketChannel.close();
             selector.close();

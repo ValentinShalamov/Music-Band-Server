@@ -5,10 +5,12 @@ import command.Command;
 import command.CommandDeserializer;
 import exceptions.DatabaseValidationException;
 import exceptions.NoSuchUserException;
+import exceptions.UserExistsException;
 import logger.LoggerConfigurator;
 import manager.LoginAndRegisterManager;
 import manager.MusicBandManager;
 
+import response.Response;
 import user.User;
 
 import java.sql.SQLException;
@@ -54,13 +56,15 @@ public class RequestHandler {
             User user = loginAndRegisterManager.getUser(login, pass);
             context.setUser(user);
             musicBandManager.initCommandHistory(user);
-            return AUTHORIZATION_SUCCESSFUL;
+            return String.format("%sUsername: %s \n", AUTHORIZATION_SUCCESSFUL, user.login());
         } catch (NoSuchUserException e) {
             return NO_SUCH_USER;
         } catch (DatabaseValidationException e) {
             return INCORRECT_PASS;
         } catch (SQLException e) {
             return SQL_EXCEPTION;
+        } catch (UserExistsException e) {
+            return USER_IS_AUTHORIZED;
         }
     }
 
@@ -154,9 +158,5 @@ public class RequestHandler {
 
     private boolean hasTwoArg(Command command) {
         return command.getFirstArg() != null && command.getSecondArg() != null;
-    }
-
-    public String readGreetMessage() {
-        return GREET_MESSAGE;
     }
 }
