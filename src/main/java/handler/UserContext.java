@@ -10,7 +10,7 @@ public class UserContext {
         return user;
     }
 
-    public void setUser(User user) {
+    public synchronized void setUser(User user) {
         if (this.user == null) {
             this.user = user;
             return;

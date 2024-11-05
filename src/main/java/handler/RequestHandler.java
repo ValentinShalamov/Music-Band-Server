@@ -9,8 +9,6 @@ import exceptions.UserExistsException;
 import logger.LoggerConfigurator;
 import manager.LoginAndRegisterManager;
 import manager.MusicBandManager;
-
-import response.Response;
 import user.User;
 
 import java.sql.SQLException;

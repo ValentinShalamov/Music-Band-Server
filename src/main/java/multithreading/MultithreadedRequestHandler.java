@@ -14,19 +14,19 @@ import static messages.ErrorMessages.BLOCK_QUEUE_PUT_ERROR;
 import static messages.ServerMessages.PROCESSING_REQUEST;
 
 public class MultithreadedRequestHandler {
-    private final ExecutorService threadPoll;
+    private final ExecutorService threadPool;
     private final BlockingQueue<Response> responses;
     private final RequestHandler requestHandler;
     private final Logger logger = LoggerConfigurator.createDefaultLogger(MultithreadedRequestHandler.class.getName());
 
-    public MultithreadedRequestHandler(ExecutorService threadPoll, BlockingQueue<Response> responses, RequestHandler requestHandler) {
-        this.threadPoll = threadPoll;
+    public MultithreadedRequestHandler(ExecutorService threadPool, BlockingQueue<Response> responses, RequestHandler requestHandler) {
+        this.threadPool = threadPool;
         this.responses = responses;
         this.requestHandler = requestHandler;
     }
 
     public void execute(int requestId, String request, UserContext userContext) {
-        threadPoll.execute(() -> {
+        threadPool.execute(() -> {
             logger.info(PROCESSING_REQUEST);
             try {
                 String response = requestHandler.getHandleRequestResult(request, userContext);
