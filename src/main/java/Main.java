@@ -47,7 +47,7 @@ public class Main {
         MultithreadedRequestHandler multithreadedRequestHandler = new MultithreadedRequestHandler(threadPool, responses, requestHandler);
 
         return new Server(multithreadedRequestHandler, responses, messageReader,
-                currentUsers,"localhost", 8888);
+                currentUsers,"193.124.115.131", 8888);
     }
 
     private static RequestHandler getRequestHandler(DatabaseConnector connector) throws SQLException {
