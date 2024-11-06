@@ -8,6 +8,8 @@ import java.time.format.DateTimeFormatter;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Set;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 import static messages.ResultMessages.*;
 
@@ -15,14 +17,9 @@ public class CacheManager {
     private Set<MusicBand> musicBands;
     private final LocalDateTime localDateTime;
 
-
     public CacheManager(Set<MusicBand> musicBands) {
         this.musicBands = musicBands;
         this.localDateTime = LocalDateTime.now();
-    }
-
-    public String help() {
-        return LIST_OF_AVAILABLE_COMMAND;
     }
 
     public String info() {
@@ -35,28 +32,26 @@ public class CacheManager {
     public String show() {
         if (musicBands.isEmpty()) {
             return COLLECTION_IS_EMPTY;
-        } else {
-            StringBuilder sb = new StringBuilder();
-            musicBands.stream()
-                    .sorted(Comparator.comparingLong(MusicBand::getId))
-                    .forEach(sb::append);
-            return sb.toString();
         }
+        return musicBands.stream()
+                .sorted(Comparator.comparingLong(MusicBand::getId))
+                .map(MusicBand::toString)
+                .collect(Collectors.joining());
     }
 
     public String showMine(User user) {
         int userId = user.id();
-        if (musicBands.stream()
-                .noneMatch(mb -> mb.getUser().id() == userId)) {
+
+        String result = musicBands.stream()
+                .filter((band) -> band.getUser().id() == userId)
+                .sorted(Comparator.comparingLong(MusicBand::getId))
+                .map(MusicBand::toString)
+                .collect(Collectors.joining());
+
+        if (result.isEmpty()) {
             return NO_HAVE_BANDS;
-        } else {
-            StringBuilder sb = new StringBuilder();
-            musicBands.stream()
-                    .filter((band) -> band.getUser().id() == userId)
-                    .sorted(Comparator.comparingLong(MusicBand::getId))
-                    .forEach(sb::append);
-            return sb.toString();
         }
+        return result;
     }
 
     public void add(MusicBand musicBand) {
@@ -73,25 +68,23 @@ public class CacheManager {
     }
 
     public void clear(User user) {
-        int userId = user.id();
-        musicBands.removeIf((band) -> band.getUser().id() == userId);
+        musicBands.removeIf((band) -> band.getUser().id() == user.id());
     }
 
     public String removeLower(long sales, User user) {
         int userId = user.id();
-        if (musicBands.stream()
-                .noneMatch(mb -> mb.getUser().id() == userId)) {
-            return NO_HAVE_BANDS;
-        }
-        StringBuilder builder = new StringBuilder();
-        musicBands.stream()
-                .filter(mb -> mb.getUser().id() == userId && mb.getBestAlbum().sales() < sales)
-                .forEach(mb -> builder.append(MUSIC_BAND_HAS_BEEN_DELETED_SUCCESSFUL_ID).append(mb.getId()).append('\n'));
-        musicBands.removeIf(mb -> mb.getUser().id() == userId && mb.getBestAlbum().sales() < sales);
-        if (builder.toString().isEmpty()) {
+        Predicate<MusicBand> removeLowerPredicate = mb -> mb.getUser().id() == userId && mb.getBestAlbum().sales() < sales;
+
+        String result = musicBands.stream()
+                .filter(removeLowerPredicate)
+                .map(mb -> String.format(MUSIC_BAND_HAS_BEEN_DELETED_SUCCESSFUL_ID + "%d \n", mb.getId()))
+                .collect(Collectors.joining());
+
+        if (result.isEmpty()) {
             return ALL_ELEMENT_BIGGER;
         }
-        return builder.toString();
+        musicBands.removeIf(removeLowerPredicate);
+        return result;
     }
 
     public String minByBestAlbum() {
@@ -105,25 +98,27 @@ public class CacheManager {
         if (musicBands.isEmpty()) {
             return COLLECTION_IS_EMPTY;
         }
-        StringBuilder builder = new StringBuilder();
-        musicBands.stream()
+
+        String result = musicBands.stream()
                 .filter(mb -> mb.getBestAlbum().sales() == sales)
-                .forEach(builder::append);
-        if (builder.isEmpty()) {
+                .map(MusicBand::toString)
+                .collect(Collectors.joining());
+
+        if (result.isEmpty()) {
             return NO_SUCH_ELEMENTS;
         }
-        return builder.toString();
+
+        return result;
     }
 
     public String printFieldAscBestAlbum() {
         if (musicBands.isEmpty()) {
             return COLLECTION_IS_EMPTY;
         }
-        StringBuilder builder = new StringBuilder();
-        musicBands.stream()
+        return musicBands.stream()
                 .sorted(MusicBand::compareTo)
-                .forEach(mb -> builder.append("owner = ").append(mb.getUser().login()).append(", sales = ").append(mb.getBestAlbum().sales()).append('\n'));
-        return builder.toString();
+                .map(mb -> String.format("owner = %s, sales = %d \n", mb.getUser().login(), mb.getBestAlbum().sales()))
+                .collect(Collectors.joining());
     }
 
     public void initBands(Set<MusicBand> anotherBand) {

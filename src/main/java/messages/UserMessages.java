@@ -10,4 +10,5 @@ public class UserMessages {
     public static final String REGISTRATION_SUCCESSFUL = "You have registered in the program successful \n";
     public static final String USER_EXISTS_ALREADY = "Such user exists already, please, use different login \n";
     public static final String INCORRECT_PASS = "You have entered the incorrect password \n";
+    public static final String USER_IS_AUTHORIZED = "You have already authorized in the program \n";
 }

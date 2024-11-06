@@ -2,8 +2,13 @@ package server;
 
 import exceptions.ClientDisconnectedException;
 import exceptions.NotFullMessageException;
+import exceptions.ServerCloseException;
 import exceptions.UnsupportedClientException;
+import handler.MessageReader;
+import handler.UserContext;
 import logger.LoggerConfigurator;
+import multithreading.MultithreadedRequestHandler;
+import response.Response;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -15,30 +20,71 @@ import java.nio.channels.SocketChannel;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.BlockingQueue;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static messages.ErrorMessages.*;
 import static messages.ServerMessages.*;
+import static messages.UserMessages.GREET_MESSAGE;
 
-public class Server {
+public class Server implements AutoCloseable {
     private final ServerSocketChannel serverSocketChannel;
     private final Selector selector;
-    private final RequestHandler requestHandler;
     private final MessageReader messageReader;
-    private final CurrentUsers currentUsers;
+    private final CurrentRequests currentRequests;
+    private final BlockingQueue<Response> responses;
+    private final MultithreadedRequestHandler multithreadedRequestHandler;
+    private final Map<SocketChannel, UserContext> currentUsers;
+
     private static final Logger logger = LoggerConfigurator.createDefaultLogger(Server.class.getName());
 
-    public Server(RequestHandler requestHandler, String address, int port) throws IOException {
+    public Server(MultithreadedRequestHandler multithreadedRequestHandler, BlockingQueue<Response> blockingQueue,
+                  MessageReader messageReader, Map<SocketChannel, UserContext> currentUsers,
+                  String address, int port) throws IOException {
+
         this.serverSocketChannel = ServerSocketChannel.open();
         this.serverSocketChannel.socket().bind(new InetSocketAddress(address, port));
         this.serverSocketChannel.configureBlocking(false);
         this.selector = Selector.open();
         this.serverSocketChannel.register(selector, SelectionKey.OP_ACCEPT);
-        this.requestHandler = requestHandler;
-        this.messageReader = new MessageReader();
-        this.currentUsers = new CurrentUsers();
+        this.messageReader = messageReader;
+        this.currentUsers = currentUsers;
+        this.currentRequests = new CurrentRequests();
+        this.responses = blockingQueue;
+
+        this.multithreadedRequestHandler = multithreadedRequestHandler;
+        initSender();
+    }
+
+    private void initSender() {
+        Thread sender = new Thread(() -> {
+            while (true) {
+                try {
+                    Response curr = responses.take();
+                    logger.info(PREPARING_TO_SEND);
+                    int id = curr.requestId();
+                    String result = curr.result();
+                    SocketChannel client = currentRequests.takeClient(id);
+                    client.write(getMessageForSend(result));
+                    logger.info(SENDING_ANSWER_TO_CLIENT);
+                    if (result.equals(DESERIALIZATION_ERROR)) {
+                        currentUsers.remove(client);
+                        logger.info(DELETING_SUCCESSFUL);
+                        client.close();
+                        logger.info(CONNECTION_CLOSED);
+                    }
+                } catch (InterruptedException e) {
+                    logger.log(Level.SEVERE, BLOCK_QUEUE_TAKE_ERROR, e);
+                } catch (IOException e) {
+                    logger.log(Level.SEVERE, CHANNEL_FAILURE, e);
+                }
+            }
+        });
+        sender.setDaemon(true);
+        sender.start();
     }
 
     public void start() {
@@ -82,16 +128,22 @@ public class Server {
         try {
             client.configureBlocking(false);
             client.register(selector, SelectionKey.OP_READ);
-            currentUsers.addClient(client);
+            currentUsers.putIfAbsent(client, new UserContext());
             logger.info(NEW_CLIENT_CONNECTED + client.getRemoteAddress() + "\n");
-            client.write(getMessageForSend(requestHandler.readGreetMessage()));
+            int requestId = currentRequests.getRequestId(client);
+            responses.put(new Response(requestId, GREET_MESSAGE));
         } catch (IOException e) {
-            currentUsers.deleteClient(client);
+            currentUsers.remove(client);
             client.close();
             logger.info(CONNECTION_CLOSED);
             logger.log(Level.SEVERE, CHANNEL_FAILURE, e);
+        } catch (InterruptedException e) {
+            currentUsers.remove(client);
+            client.close();
+            logger.info(CONNECTION_CLOSED);
+            String message = String.format("Thread name: %s, message: %s", Thread.currentThread().getName(), BLOCK_QUEUE_PUT_ERROR);
+            logger.log(Level.SEVERE, message, e);
         }
-
     }
 
     private void handleRead(SelectionKey key) throws IOException {
@@ -104,45 +156,40 @@ public class Server {
             } catch (NotFullMessageException e) {
                 return;
             } catch (ClientDisconnectedException e) {
-                currentUsers.deleteClient(client);
+                currentUsers.remove(client);
                 client.close();
                 logger.info(CONNECTION_CLOSED);
                 logger.info(CLIENT_HAS_DISCONNECTED);
                 return;
             } catch (UnsupportedClientException e) {
-                currentUsers.deleteClient(client);
+                currentUsers.remove(client);
                 logger.info(UNSUPPORTED_CLIENT);
                 client.close();
                 logger.info(CONNECTION_CLOSED);
                 return;
             }
 
-            UserContext context = currentUsers.getUserContext(client);
-            logger.info(PROCESSING_REQUEST);
-            String result = requestHandler.getHandleRequestResult(request, context);
-            logger.log(Level.WARNING, result);
-            if (result.equals(DESERIALIZATION_ERROR)) {
-                logger.info(PREPARING_TO_SEND);
-                client.write(getMessageForSend(DESERIALIZATION_ERROR));
-                logger.info(SENDING_ANSWER_TO_CLIENT);
-                messageReader.deleteClient(client);
-                logger.info(DELETING_SUCCESSFUL);
-                currentUsers.deleteClient(client);
-                client.close();
-                logger.info(CONNECTION_CLOSED);
-                return;
-            }
-            logger.info(PREPARING_TO_SEND);
-            client.write(getMessageForSend(result));
-            logger.info(SENDING_ANSWER_TO_CLIENT);
+            multithreadedRequestHandler.execute(currentRequests.getRequestId(client), request, currentUsers.get(client));
+
         } catch (IOException e) {
             logger.info(UNSUPPORTED_CLIENT);
-            messageReader.deleteClient(client);
-            currentUsers.deleteClient(client);
+            currentUsers.remove(client);
             logger.info(DELETING_SUCCESSFUL);
             client.close();
             logger.info(CONNECTION_CLOSED);
             logger.log(Level.SEVERE, CHANNEL_FAILURE, e);
+        }
+    }
+
+    @Override
+    public void close() throws Exception {
+        try {
+            serverSocketChannel.close();
+            selector.close();
+        } finally {
+            if (serverSocketChannel.isOpen() || selector.isOpen()) {
+                throw new ServerCloseException(SERVER_CLOSE_ERROR);
+            }
         }
     }
 }

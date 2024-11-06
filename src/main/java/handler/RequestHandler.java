@@ -1,10 +1,11 @@
-package server;
+package handler;
 
 import com.google.gson.JsonSyntaxException;
 import command.Command;
 import command.CommandDeserializer;
 import exceptions.DatabaseValidationException;
 import exceptions.NoSuchUserException;
+import exceptions.UserExistsException;
 import logger.LoggerConfigurator;
 import manager.LoginAndRegisterManager;
 import manager.MusicBandManager;
@@ -25,6 +26,7 @@ public class RequestHandler {
     private final MusicBandManager musicBandManager;
     private final CommandDeserializer deserializer;
     private final LoginAndRegisterManager loginAndRegisterManager;
+
     private static final Logger logger = LoggerConfigurator.createDefaultLogger(RequestHandler.class.getName());
 
     public RequestHandler(MusicBandManager musicBandManager, LoginAndRegisterManager loginAndRegisterManager) {
@@ -49,16 +51,18 @@ public class RequestHandler {
 
     private String logIn(String login, String pass, UserContext context) {
         try {
-            User user = loginAndRegisterManager.getUser(login,pass);
+            User user = loginAndRegisterManager.getUser(login, pass);
             context.setUser(user);
             musicBandManager.initCommandHistory(user);
-            return AUTHORIZATION_SUCCESSFUL;
+            return String.format("%sUsername: %s \n", AUTHORIZATION_SUCCESSFUL, user.login());
         } catch (NoSuchUserException e) {
             return NO_SUCH_USER;
         } catch (DatabaseValidationException e) {
             return INCORRECT_PASS;
         } catch (SQLException e) {
             return SQL_EXCEPTION;
+        } catch (UserExistsException e) {
+            return USER_IS_AUTHORIZED;
         }
     }
 
@@ -152,9 +156,5 @@ public class RequestHandler {
 
     private boolean hasTwoArg(Command command) {
         return command.getFirstArg() != null && command.getSecondArg() != null;
-    }
-
-    public String readGreetMessage() {
-        return GREET_MESSAGE;
     }
 }

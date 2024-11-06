@@ -7,10 +7,11 @@ import music.MusicBand;
 import user.User;
 
 import java.sql.SQLException;
-import java.util.ArrayDeque;
 import java.util.Deque;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.BlockingDeque;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.LinkedBlockingDeque;
 
 import static messages.ErrorMessages.SQL_EXCEPTION;
 import static messages.HistoryMessages.*;
@@ -19,7 +20,7 @@ import static messages.ResultMessages.*;
 public class MusicBandManager {
     private final CacheManager cacheManager;
     private final MusicBandDAO musicBandDAO;
-    private final Map<String, Deque<String>> history = new HashMap<>();
+    private final Map<String, BlockingDeque<String>> history = new ConcurrentHashMap<>();
 
     public MusicBandManager(CacheManager cacheManager, MusicBandDAO musicBandDAO) throws SQLException {
         this.cacheManager = cacheManager;
@@ -29,7 +30,7 @@ public class MusicBandManager {
 
     public String help(User user) {
         addHistory(HELP_HISTORY, user);
-        return cacheManager.help();
+        return LIST_OF_AVAILABLE_COMMAND;
     }
 
     public String info(User user) {
@@ -50,7 +51,7 @@ public class MusicBandManager {
     public String add(MusicBand musicBand, User user) {
         addHistory(ADD_HISTORY, user);
         try {
-            cacheManager.add(musicBandDAO.insertBandAndSelect(musicBand, user));
+            cacheManager.add(musicBandDAO.insertBand(musicBand, user));
             return MUSIC_BAND_HAS_BEEN_ADDED_SUCCESSFUL;
         } catch (SQLException e) {
             return SQL_EXCEPTION;
@@ -105,6 +106,7 @@ public class MusicBandManager {
 
     public String history(User user) {
         String login = user.login();
+
         if (history.get(login).isEmpty()) {
             return HISTORY_IS_EMPTY;
         }
@@ -115,10 +117,12 @@ public class MusicBandManager {
                 .skip(1)
                 .forEach(builder::append);
         return builder.toString();
+
     }
 
     public String clearHistory(User user) {
         String login = user.login();
+
         if (history.get(login).isEmpty()) {
             return HISTORY_IS_EMPTY;
         }
@@ -166,7 +170,7 @@ public class MusicBandManager {
     }
 
     public void initCommandHistory(User user) {
-        history.putIfAbsent(user.login(), new ArrayDeque<>());
+        history.putIfAbsent(user.login(), new LinkedBlockingDeque<>());
     }
 
     private void warmupCache() throws SQLException {

@@ -1,4 +1,4 @@
-package server;
+package handler;
 
 import exceptions.ClientDisconnectedException;
 import exceptions.NotFullMessageException;
@@ -10,20 +10,22 @@ import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class MessageReader {
-    private final HashMap<SocketChannel, MessageReadingContext> clientInfoMap = new HashMap<>();
+    private final Map<SocketChannel, MessageReadingContext> readingContextMap = new HashMap<>();
     private static final int LIMIT_MESSAGE_LENGTH = 1024;
+    private static final int REQUIRED_BUFFER_CAPACITY = 4;
     private static final Logger logger = LoggerConfigurator.createDefaultLogger(MessageReader.class.getName());
 
     public String getFullMessage(SocketChannel client) {
         try {
             int read;
-            if (!clientInfoMap.containsKey(client)) {
-                clientInfoMap.put(client, new MessageReadingContext());
-                ByteBuffer buffer = clientInfoMap.get(client).getBuffer();
+            if (!readingContextMap.containsKey(client)) {
+                readingContextMap.put(client, new MessageReadingContext());
+                ByteBuffer buffer = readingContextMap.get(client).getBuffer();
                 read = client.read(buffer);
                 checkClientConnection(client, read);
                 if (buffer.remaining() > 0) {
@@ -33,7 +35,7 @@ public class MessageReader {
                     if (messageLength > LIMIT_MESSAGE_LENGTH) {
                         throw new IllegalArgumentException();
                     }
-                    MessageReadingContext messageReadingContext = clientInfoMap.get(client);
+                    MessageReadingContext messageReadingContext = readingContextMap.get(client);
                     messageReadingContext.setNewBufferWithLength(messageLength);
                     messageReadingContext.setReadyMessageBuffer(true);
                     buffer = messageReadingContext.getBuffer();
@@ -42,22 +44,21 @@ public class MessageReader {
                     if (buffer.remaining() == 0) {
                         byte[] bytes = buffer.array();
                         buffer.get(bytes, 0, 0);
-                        messageReadingContext.setNewBufferWithLength(4);
-                        messageReadingContext.setReadyMessageBuffer(false);
-                        return new String(buffer.array(), StandardCharsets.UTF_8);
+                        readingContextMap.remove(client);
+                        return new String(bytes, StandardCharsets.UTF_8);
                     } else {
                         throw new NotFullMessageException();
                     }
                 }
             } else {
-                MessageReadingContext messageReadingContext = clientInfoMap.get(client);
+                MessageReadingContext messageReadingContext = readingContextMap.get(client);
                 ByteBuffer buffer = messageReadingContext.getBuffer();
                 read = client.read(buffer);
                 checkClientConnection(client, read);
                 if (buffer.remaining() > 0) {
                     throw new NotFullMessageException();
                 } else {
-                    if (buffer.capacity() == 4 && !messageReadingContext.isMessageBufferReady()) {
+                    if (buffer.capacity() == REQUIRED_BUFFER_CAPACITY && !messageReadingContext.isMessageBufferReady()) {
                         int messageLength = ByteBuffer.wrap(buffer.array()).getInt();
                         if (messageLength > LIMIT_MESSAGE_LENGTH) {
                             throw new IllegalArgumentException();
@@ -71,8 +72,7 @@ public class MessageReader {
                     if (buffer.remaining() == 0) {
                         byte[] bytes = buffer.array();
                         buffer.get(bytes, 0, 0);
-                        messageReadingContext.setNewBufferWithLength(4);
-                        messageReadingContext.setReadyMessageBuffer(false);
+                        readingContextMap.remove(client);
                         return new String(bytes, StandardCharsets.UTF_8);
                     } else {
                         throw new NotFullMessageException();
@@ -81,21 +81,17 @@ public class MessageReader {
             }
         } catch (IOException e) {
             logger.log(Level.SEVERE, e.getMessage());
-            clientInfoMap.remove(client);
+            readingContextMap.remove(client);
             throw new UnsupportedClientException();
         } catch (IllegalArgumentException e) {
-            clientInfoMap.remove(client);
+            readingContextMap.remove(client);
             throw new UnsupportedClientException();
         }
     }
 
-    public void deleteClient(SocketChannel client) {
-        clientInfoMap.remove(client);
-    }
-
     private void checkClientConnection(SocketChannel client, int read) {
         if (read == -1) {
-            clientInfoMap.remove(client);
+            readingContextMap.remove(client);
             throw new ClientDisconnectedException();
         }
     }
