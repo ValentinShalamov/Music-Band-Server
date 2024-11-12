@@ -1,7 +1,6 @@
 package manager;
 
 import dao.UserDAO;
-import exceptions.DatabaseValidationException;
 import exceptions.NoSuchUserException;
 import org.apache.commons.codec.digest.DigestUtils;
 import user.User;
@@ -20,12 +19,12 @@ public class LoginAndRegisterManager {
         this.userDAO = userDAO;
     }
 
-    public User getUser(String login, String pass) throws SQLException, NoSuchUserException, DatabaseValidationException {
+    public User getUser(String login, String pass) throws SQLException, NoSuchUserException {
         User user = userDAO.selectUserByLogin(login);
         if (user.pass().equals(encodePass(pass))) {
             return user;
         } else {
-            throw new DatabaseValidationException();
+            throw new NoSuchUserException();
         }
     }
 

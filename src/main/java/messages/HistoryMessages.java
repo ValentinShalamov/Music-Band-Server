@@ -11,7 +11,8 @@ public class HistoryMessages {
     public static final String CLEAR_HISTORY = " - clear \n";
     public static final String ADD_IF_MIN_HISTORY = " - add_if_min \n";
     public static final String REMOVE_LOWER_HISTORY = " - remove_lower \n";
-    public static final String MIN_BY_BEST_ALBUM_HISTORY = " - min_by_best_album \n";
-    public static final String FILTER_BY_BEST_ALBUM_HISTORY = " - filter_by_best_album \n";
-    public static final String PRINT_FIELD_ASC_BEST_ALBUM_HISTORY = " - print_field_asc_best_album \n";
+    public static final String SHOW_MIN_HISTORY = " - show_min \n";
+    public static final String FILTER_HISTORY = " - filter \n";
+    public static final String PRINT_ASC_HISTORY = " - print_asc \n";
+    public static final String PRINT_DESC_HISTORY = " - print_desc \n";
 }

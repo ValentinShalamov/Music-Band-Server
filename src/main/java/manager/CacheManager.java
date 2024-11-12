@@ -87,14 +87,14 @@ public class CacheManager {
         return result;
     }
 
-    public String minByBestAlbum() {
+    public String showMin() {
         if (musicBands.isEmpty()) {
             return COLLECTION_IS_EMPTY;
         }
         return Collections.min(musicBands).toString();
     }
 
-    public String filterByBestAlbum(long sales) {
+    public String filter(long sales) {
         if (musicBands.isEmpty()) {
             return COLLECTION_IS_EMPTY;
         }
@@ -111,13 +111,25 @@ public class CacheManager {
         return result;
     }
 
-    public String printFieldAscBestAlbum() {
+    public String printAsc() {
         if (musicBands.isEmpty()) {
             return COLLECTION_IS_EMPTY;
         }
+
         return musicBands.stream()
                 .sorted(MusicBand::compareTo)
-                .map(mb -> String.format("owner = %s, sales = %d \n", mb.getUser().login(), mb.getBestAlbum().sales()))
+                .map(mb -> String.format("owner = %s, album name = %s, sales = %d \n", mb.getUser().login(), mb.getBestAlbum().name(), mb.getBestAlbum().sales()))
+                .collect(Collectors.joining());
+    }
+
+    public String printDesc() {
+        if (musicBands.isEmpty()) {
+            return COLLECTION_IS_EMPTY;
+        }
+
+        return musicBands.stream()
+                .sorted((mb1, mb2) -> Long.compare(mb2.getBestAlbum().sales(), mb1.getBestAlbum().sales()))
+                .map(mb -> String.format("owner = %s, album name = %s, sales = %d \n", mb.getUser().login(), mb.getBestAlbum().name(), mb.getBestAlbum().sales()))
                 .collect(Collectors.joining());
     }
 
