@@ -28,7 +28,6 @@ import java.util.logging.Logger;
 
 import static messages.ErrorMessages.*;
 import static messages.ServerMessages.*;
-import static messages.UserMessages.GREET_MESSAGE;
 
 public class Server implements AutoCloseable {
     private final ServerSocketChannel serverSocketChannel;
@@ -130,19 +129,11 @@ public class Server implements AutoCloseable {
             client.register(selector, SelectionKey.OP_READ);
             currentUsers.putIfAbsent(client, new UserContext());
             logger.info(NEW_CLIENT_CONNECTED + client.getRemoteAddress() + "\n");
-            int requestId = currentRequests.getRequestId(client);
-            responses.put(new Response(requestId, GREET_MESSAGE));
         } catch (IOException e) {
             currentUsers.remove(client);
             client.close();
             logger.info(CONNECTION_CLOSED);
             logger.log(Level.SEVERE, CHANNEL_FAILURE, e);
-        } catch (InterruptedException e) {
-            currentUsers.remove(client);
-            client.close();
-            logger.info(CONNECTION_CLOSED);
-            String message = String.format("Thread name: %s, message: %s", Thread.currentThread().getName(), BLOCK_QUEUE_PUT_ERROR);
-            logger.log(Level.SEVERE, message, e);
         }
     }
 
