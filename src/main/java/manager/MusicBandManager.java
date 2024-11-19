@@ -52,7 +52,7 @@ public class MusicBandManager {
         addHistory(ADD_HISTORY, user);
         try {
             cacheManager.add(musicBandDAO.insertBand(musicBand, user));
-            return MUSIC_BAND_HAS_BEEN_ADDED_SUCCESSFUL;
+            return String.format(MUSIC_BAND_HAS_BEEN_ADDED_SUCCESSFUL + "%d \n", musicBand.getId());
         } catch (SQLException e) {
             return SQL_EXCEPTION;
         } catch (MusicBandExistsException e) {
@@ -134,13 +134,13 @@ public class MusicBandManager {
         addHistory(ADD_IF_MIN_HISTORY, user);
         try {
             cacheManager.add(musicBandDAO.insertIfSalesMin(musicBand, user));
-            return MUSIC_BAND_HAS_BEEN_ADDED_SUCCESSFUL;
+            return String.format(MUSIC_BAND_HAS_BEEN_ADDED_SUCCESSFUL + "%d \n", musicBand.getId());
         } catch (SQLException e) {
             return SQL_EXCEPTION;
         } catch (MusicBandExistsException e) {
             return ADDITION_MISTAKE;
         } catch (DatabaseValidationException e) {
-            return SALES_BIGGER_THAN_MIN_ELEMENT;
+            return ALL_ELEMENT_BIGGER;
         }
     }
 
@@ -154,19 +154,24 @@ public class MusicBandManager {
         }
     }
 
-    public String minByBestAlbum(User user) {
-        addHistory(MIN_BY_BEST_ALBUM_HISTORY, user);
-        return cacheManager.minByBestAlbum();
+    public String showMin(User user) {
+        addHistory(SHOW_MIN_HISTORY, user);
+        return cacheManager.showMin();
     }
 
-    public String filterByBestAlbum(long sales, User user) {
-        addHistory(FILTER_BY_BEST_ALBUM_HISTORY, user);
-        return cacheManager.filterByBestAlbum(sales);
+    public String filter(long sales, User user) {
+        addHistory(FILTER_HISTORY, user);
+        return cacheManager.filter(sales);
     }
 
-    public String printFieldAscBestAlbum(User user) {
-        addHistory(PRINT_FIELD_ASC_BEST_ALBUM_HISTORY, user);
-        return cacheManager.printFieldAscBestAlbum();
+    public String printAsc(User user) {
+        addHistory(PRINT_ASC_HISTORY, user);
+        return cacheManager.printAsc();
+    }
+
+    public String printDesc(User user) {
+        addHistory(PRINT_DESC_HISTORY, user);
+        return cacheManager.printDesc();
     }
 
     public void initCommandHistory(User user) {

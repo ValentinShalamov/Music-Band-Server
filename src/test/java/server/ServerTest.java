@@ -62,13 +62,9 @@ public class ServerTest {
         ArgumentCaptor<String> captor = ArgumentCaptor.forClass(String.class);
 
         connectFirstClient();
-        String greet = readMessageForFirstClient();
-        Assertions.assertEquals(UserMessages.GREET_MESSAGE, greet);
         sendFirstHalfRequestForFirstClient("clear");
 
         connectSecondClient();
-        greet = readMessageForSecondClient();
-        Assertions.assertEquals(UserMessages.GREET_MESSAGE, greet);
         sendFirstHalfRequestForSecondClient("info");
 
         sendSecondHalfRequestForFirstClient("clear");

@@ -3,7 +3,6 @@ package handler;
 import com.google.gson.JsonSyntaxException;
 import command.Command;
 import command.CommandDeserializer;
-import exceptions.DatabaseValidationException;
 import exceptions.NoSuchUserException;
 import exceptions.UserExistsException;
 import logger.LoggerConfigurator;
@@ -56,9 +55,7 @@ public class RequestHandler {
             musicBandManager.initCommandHistory(user);
             return String.format("%sUsername: %s \n", AUTHORIZATION_SUCCESSFUL, user.login());
         } catch (NoSuchUserException e) {
-            return NO_SUCH_USER;
-        } catch (DatabaseValidationException e) {
-            return INCORRECT_PASS;
+            return USER_NOT_FOUND;
         } catch (SQLException e) {
             return SQL_EXCEPTION;
         } catch (UserExistsException e) {
@@ -87,7 +84,9 @@ public class RequestHandler {
                 } else if (command.getName().equals("login")) {
                     return logIn(command.getFirstArg(), command.getSecondArg(), context);
                 } else if (command.getName().equals("register")) {
-                    return loginAndRegisterManager.regUser(command.getFirstArg(), command.getSecondArg());
+                    String result = loginAndRegisterManager.regUser(command.getFirstArg(), command.getSecondArg());
+                    if (result.equals(REGISTRATION_SUCCESSFUL)) return logIn(command.getFirstArg(), command.getSecondArg(), context);
+                    return result;
                 }
                 return NO_SUCH_COMMAND;
             } else if (hasOneArg(command)) {
@@ -98,8 +97,8 @@ public class RequestHandler {
                     case "add_if_min" -> {
                         return musicBandManager.addIfMin(deserializer.readMusicBand(command), user);
                     }
-                    case "filter_by_best_album" -> {
-                        return musicBandManager.filterByBestAlbum(Long.parseLong(command.getFirstArg()), user);
+                    case "filter" -> {
+                        return musicBandManager.filter(Long.parseLong(command.getFirstArg()), user);
                     }
                     case "remove" -> {
                         return musicBandManager.removeById(Integer.parseInt(command.getFirstArg()), user);
@@ -125,6 +124,9 @@ public class RequestHandler {
                     case "show_mine" -> {
                         return musicBandManager.showMine(user);
                     }
+                    case "show_min" -> {
+                        return musicBandManager.showMin(user);
+                    }
                     case "clear" -> {
                         return musicBandManager.clear(user);
                     }
@@ -134,11 +136,11 @@ public class RequestHandler {
                     case "history_clear" -> {
                         return musicBandManager.clearHistory(user);
                     }
-                    case "min_by_best_album" -> {
-                        return musicBandManager.minByBestAlbum(user);
+                    case "print_asc" -> {
+                        return musicBandManager.printAsc(user);
                     }
-                    case "print_field_asc_best_album" -> {
-                        return musicBandManager.printFieldAscBestAlbum(user);
+                    case "print_desc" -> {
+                        return musicBandManager.printDesc(user);
                     }
                     default -> {
                         return NO_SUCH_COMMAND;
